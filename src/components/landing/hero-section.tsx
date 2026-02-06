@@ -1,68 +1,150 @@
-import { Button } from "@/components/ui/button"
-import heroHand from "@/assets/hero-hand.png"
-import humanHand from "@/assets/human-hand.png"
-import { motion } from "framer-motion"
+import { useState, useEffect, useRef } from "react"
+import { ScatteredIcons } from "@/components/landing/scattered-icons"
+import { RetroPixelButton } from "@/components/ui/retro-pixel-button";
 
-const TypingText = ({ text }: { text: string }) => {
-  return (
-    <motion.p 
-      className="mt-4 text-xl md:text-2xl text-muted-foreground font-pixel font-normal tracking-wide min-h-[32px]"
-      initial={{ opacity: 1 }}
-    >
-      {text.split("").map((char, index) => (
-        <motion.span
-          key={index}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            duration: 0.1,
-            delay: index * 0.15,
-            ease: "easeIn"
-          }}
-        >
-          {char}
-        </motion.span>
-      ))}
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
-        className="inline-block ml-1 text-primary"
-      >
-        |
-      </motion.span>
-    </motion.p>
-  )
+interface HeroSectionProps {
+  onAnimationComplete?: () => void
 }
 
-export function HeroSection() {
-  return (
-    <section className="flex flex-col items-center justify-start pt-4 pb-32 w-full text-center gap-8 relative z-10 min-h-[600px]">
-      <div className="absolute left-0 top-[60%] -translate-y-1/2 -z-10 pointer-events-none select-none">
-        <img src={heroHand} alt="Robot Hand" className="w-[500px] h-auto object-contain mix-blend-screen opacity-80" />
-      </div>
+export function HeroSection({ onAnimationComplete }: HeroSectionProps) {
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const accumulatedScrollRef = useRef(0)
 
-      <div className="absolute right-0 bottom-0 -z-10 pointer-events-none select-none translate-y-32">
-         <img src={humanHand} alt="Human Hand" className="w-[500px] h-auto object-contain mix-blend-screen opacity-80" />
-      </div>
+  useEffect(() => {
+    const maxScroll = 1200 // Increased for two-stage animation
 
-      <div className="flex flex-col items-center gap-0 w-full max-w-7xl mx-auto px-6 md:px-8">
-        <h1 className="text-6xl md:text-9xl font-bold font-pixel tracking-tighter leading-[0.8] select-none text-primary z-10">
-          8004 AGENTS
-          <br />
-          NETWORK
-        </h1>
+    const handleWheel = (e: Event) => {
+      const wheelEvent = e as WheelEvent
+      
+      // Only prevent default if we're still in the animation range
+      if (accumulatedScrollRef.current < maxScroll && wheelEvent.deltaY > 0) {
+        wheelEvent.preventDefault()
+        wheelEvent.stopPropagation()
         
-        <TypingText text="intelligence network for the autonomous future" />
+        // Accumulate scroll delta
+        accumulatedScrollRef.current += wheelEvent.deltaY
+        
+        // Clamp between 0 and maxScroll
+        accumulatedScrollRef.current = Math.max(0, Math.min(accumulatedScrollRef.current, maxScroll))
+        
+        // Calculate progress (0 to 1)
+        const progress = accumulatedScrollRef.current / maxScroll
+        setScrollProgress(progress)
+        
+        // Notify parent when animation is complete
+        if (progress >= 1 && onAnimationComplete) {
+          onAnimationComplete()
+        }
+      } else if (wheelEvent.deltaY < 0 && accumulatedScrollRef.current > 0) {
+        // Allow scrolling back up within animation
+        wheelEvent.preventDefault()
+        wheelEvent.stopPropagation()
+        
+        accumulatedScrollRef.current += wheelEvent.deltaY
+        accumulatedScrollRef.current = Math.max(0, Math.min(accumulatedScrollRef.current, maxScroll))
+        
+        const progress = accumulatedScrollRef.current / maxScroll
+        setScrollProgress(progress)
+      }
+      // If animation is complete (progress = 1) and scrolling down, allow default scroll behavior
+    }
+
+    // Add wheel listener to document with passive: false
+    document.addEventListener('wheel', handleWheel, { passive: false })
+    
+    return () => {
+      document.removeEventListener('wheel', handleWheel)
+    }
+  }, [onAnimationComplete])
+
+  // Two-stage animation calculations
+  // Stage 1 (0-0.4): Fade out icons, buttons, badge
+  // Stage 2 (0.4-1.0): Zoom and fade text
+  
+  const stage1Progress = Math.min(scrollProgress / 0.4, 1) // 0 to 1 over first 40%
+  const stage2Progress = Math.max((scrollProgress - 0.4) / 0.6, 0) // 0 to 1 over last 60%
+  
+  // Icons and buttons fade out in stage 1
+  const elementsOpacity = 1 - stage1Progress
+  
+  // Text zooms in stage 2 (scale 1 to 4)
+  const textScale = 1 + (stage2Progress * 3)
+  
+  // Text fades out in stage 2
+  const textOpacity = 1 - stage2Progress
+
+  return (
+    <section className="relative flex flex-col items-center justify-center pt-32 pb-32 w-full text-center gap-1 min-h-screen overflow-hidden">
+      <ScatteredIcons opacity={elementsOpacity} />
+      
+      {/* Light Noise Overlay */}
+      <div 
+        className="absolute inset-0 z-[1] pointer-events-none opacity-[0.05] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* CSS Animation for text fill pulse */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes textFillPulse {
+          0% {
+            -webkit-text-fill-color: currentColor;
+            text-fill-color: currentColor;
+          }
+          75% {
+            -webkit-text-fill-color: currentColor;
+            text-fill-color: currentColor;
+          }
+          76%, 100% {
+            -webkit-text-fill-color: transparent;
+            text-fill-color: transparent;
+          }
+        }
+        .text-pulse {
+          animation: textFillPulse 4s ease-in-out infinite;
+        }
+        .text-pulse:hover {
+          animation: none;
+          -webkit-text-fill-color: currentColor !important;
+          text-fill-color: currentColor !important;
+        }
+      `}} />
+      
+      <div 
+        className="flex items-center gap-2 px-4 py-2 border-2 rounded-xl bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-none transition-all duration-300 relative z-10"
+        style={{ opacity: elementsOpacity }}
+      >
+        <div className="w-2 h-2 bg-green-500 rounded-sm animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+        <span className="text-xs md:text-sm font-bold font-pixel tracking-[0.2em] uppercase opacity-90">
+          Intelligence & Discovery Layer
+        </span>
       </div>
       
-      <div className="flex gap-6 mt-8">
-        <Button size="lg" className="rounded-none border-2 border-primary px-12 text-lg h-14 hover:bg-primary/10 transition-colors">
-          Deploy
-        </Button>
-        <Button variant="outline" size="lg" className="rounded-none border-2 px-12 text-lg h-14 hover:bg-primary/10 transition-colors">
-          Hire
-        </Button>
+      <h1 
+        className="flex flex-col items-center justify-center text-6xl md:text-9xl font-bold font-pixel tracking-tighter leading-[0.8] select-none z-10 cursor-pointer text-pulse transition-transform duration-100 ease-out"
+        style={{
+          WebkitTextStroke: '2px currentColor',
+          WebkitTextFillColor: 'transparent',
+          paintOrder: 'stroke fill',
+          transform: `scale(${textScale})`,
+          opacity: textOpacity,
+        } as React.CSSProperties}
+      >
+        <span>8004 AGENTS</span>
+        <span className="-mt-4 md:-mt-6">NETWORK</span>
+      </h1>
+
+      <div 
+        className="flex gap-4 mt-1 relative z-10 transition-opacity duration-300"
+        style={{ opacity: elementsOpacity }}
+      >
+        <RetroPixelButton className="w-32 h-10 border-primary/80 text-sm">
+          <span>Deploy</span>
+        </RetroPixelButton>
+        <RetroPixelButton className="w-32 h-10 border-primary/80 text-sm">
+          <span>Hire</span>
+        </RetroPixelButton>
       </div>
     </section>
   )
