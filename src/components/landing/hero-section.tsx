@@ -1,81 +1,103 @@
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { ScatteredIcons } from "@/components/landing/scattered-icons"
-import { RetroPixelButton } from "@/components/ui/retro-pixel-button";
+import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
 
 interface HeroSectionProps {
   onAnimationComplete?: () => void
+  isActive: boolean
 }
 
-export function HeroSection({ onAnimationComplete }: HeroSectionProps) {
-  const [scrollProgress, setScrollProgress] = useState(0)
+export function HeroSection({ onAnimationComplete, isActive }: HeroSectionProps) {
+  const containerRef = useRef<HTMLElement>(null)
+  const iconsRef = useRef<HTMLDivElement>(null)
+  const badgeRef = useRef<HTMLDivElement>(null)
+  const buttonsRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  
+  const timelineRef = useRef<gsap.core.Timeline | null>(null)
   const accumulatedScrollRef = useRef(0)
+  const maxScroll = 1200
 
+  // Initialize GSAP Timeline
+  useGSAP(() => {
+    if (!containerRef.current) return
+
+    const tl = gsap.timeline({ paused: true })
+
+    // Stage 1: Fade out elements (0 - 40% of scroll)
+    tl.to([iconsRef.current, badgeRef.current, buttonsRef.current], {
+      opacity: 0,
+      duration: 0.4,
+      ease: "none"
+    }, 0)
+
+    // Stage 2: Zoom and Fade Text (40% - 100% of scroll)
+    tl.to(titleRef.current, {
+      scale: 4,
+      opacity: 0,
+      duration: 0.6,
+      ease: "power1.in"
+    }, 0.4)
+
+    timelineRef.current = tl
+  }, { scope: containerRef })
+
+  // Handle Scroll
   useEffect(() => {
-    const maxScroll = 1200 // Increased for two-stage animation
+    if (!isActive) return
 
     const handleWheel = (e: Event) => {
       const wheelEvent = e as WheelEvent
       
-      // Only prevent default if we're still in the animation range
-      if (accumulatedScrollRef.current < maxScroll && wheelEvent.deltaY > 0) {
+      // Calculate potential new scroll position
+      const delta = wheelEvent.deltaY
+      const newScroll = accumulatedScrollRef.current + delta
+
+      // Check boundaries
+      const isWithinBounds = newScroll >= 0 && newScroll <= maxScroll
+
+      // Determine if we should handle this event
+      // We handle it if we are within bounds, OR if we are trying to scroll back into bounds
+      // BUT if we are completely done (at max) and scrolling down, we let it pass (for App.tsx to switch sections)
+      // If we are at start (0) and scrolling up, we let it pass (overscroll)
+      
+      if (isWithinBounds) {
         wheelEvent.preventDefault()
         wheelEvent.stopPropagation()
-        
-        // Accumulate scroll delta
-        accumulatedScrollRef.current += wheelEvent.deltaY
-        
-        // Clamp between 0 and maxScroll
-        accumulatedScrollRef.current = Math.max(0, Math.min(accumulatedScrollRef.current, maxScroll))
-        
-        // Calculate progress (0 to 1)
-        const progress = accumulatedScrollRef.current / maxScroll
-        setScrollProgress(progress)
-        
-        // Notify parent when animation is complete
-        if (progress >= 1 && onAnimationComplete) {
-          onAnimationComplete()
-        }
-      } else if (wheelEvent.deltaY < 0 && accumulatedScrollRef.current > 0) {
-        // Allow scrolling back up within animation
+        accumulatedScrollRef.current = newScroll
+      } else if (accumulatedScrollRef.current > 0 && delta < 0) {
+        // Allow scrolling back up if we are partially or fully passed max
         wheelEvent.preventDefault()
         wheelEvent.stopPropagation()
-        
-        accumulatedScrollRef.current += wheelEvent.deltaY
-        accumulatedScrollRef.current = Math.max(0, Math.min(accumulatedScrollRef.current, maxScroll))
-        
-        const progress = accumulatedScrollRef.current / maxScroll
-        setScrollProgress(progress)
+        accumulatedScrollRef.current = Math.max(0, newScroll)
+      } else if (accumulatedScrollRef.current < maxScroll && delta > 0) {
+         // Allow scrolling forward if we are NOT yet at max
+         wheelEvent.preventDefault()
+         wheelEvent.stopPropagation()
+         accumulatedScrollRef.current = Math.min(newScroll, maxScroll)
       }
-      // If animation is complete (progress = 1) and scrolling down, allow default scroll behavior
+      
+      // Update Timeline
+      const progress = accumulatedScrollRef.current / maxScroll
+      timelineRef.current?.progress(progress)
+
+      // Notify completion
+      if (progress >= 1 && onAnimationComplete) {
+        onAnimationComplete()
+      }
     }
 
-    // Add wheel listener to document with passive: false
     document.addEventListener('wheel', handleWheel, { passive: false })
-    
-    return () => {
-      document.removeEventListener('wheel', handleWheel)
-    }
-  }, [onAnimationComplete])
-
-  // Two-stage animation calculations
-  // Stage 1 (0-0.4): Fade out icons, buttons, badge
-  // Stage 2 (0.4-1.0): Zoom and fade text
-  
-  const stage1Progress = Math.min(scrollProgress / 0.4, 1) // 0 to 1 over first 40%
-  const stage2Progress = Math.max((scrollProgress - 0.4) / 0.6, 0) // 0 to 1 over last 60%
-  
-  // Icons and buttons fade out in stage 1
-  const elementsOpacity = 1 - stage1Progress
-  
-  // Text zooms in stage 2 (scale 1 to 4)
-  const textScale = 1 + (stage2Progress * 3)
-  
-  // Text fades out in stage 2
-  const textOpacity = 1 - stage2Progress
+    return () => document.removeEventListener('wheel', handleWheel)
+  }, [isActive, onAnimationComplete])
 
   return (
-    <section className="relative flex flex-col items-center justify-center pt-32 pb-32 w-full text-center gap-1 min-h-screen overflow-hidden">
-      <ScatteredIcons opacity={elementsOpacity} />
+    <section ref={containerRef} className="relative flex flex-col items-center justify-center pt-32 pb-32 w-full text-center gap-1 min-h-screen overflow-hidden">
+      <div ref={iconsRef} className="absolute inset-0 z-0">
+        <ScatteredIcons />
+      </div>
       
       {/* Light Noise Overlay */}
       <div 
@@ -112,8 +134,8 @@ export function HeroSection({ onAnimationComplete }: HeroSectionProps) {
       `}} />
       
       <div 
+        ref={badgeRef}
         className="flex items-center gap-2 px-4 py-2 border-2 rounded-xl bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-none transition-all duration-300 relative z-10"
-        style={{ opacity: elementsOpacity }}
       >
         <div className="w-2 h-2 bg-green-500 rounded-sm animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
         <span className="text-xs md:text-sm font-bold font-pixel tracking-[0.2em] uppercase opacity-90">
@@ -122,22 +144,21 @@ export function HeroSection({ onAnimationComplete }: HeroSectionProps) {
       </div>
       
       <h1 
+        ref={titleRef}
         className="flex flex-col items-center justify-center text-6xl md:text-9xl font-bold font-pixel tracking-tighter leading-[0.8] select-none z-10 cursor-pointer text-pulse transition-transform duration-100 ease-out"
         style={{
           WebkitTextStroke: '2px currentColor',
           WebkitTextFillColor: 'transparent',
           paintOrder: 'stroke fill',
-          transform: `scale(${textScale})`,
-          opacity: textOpacity,
-        } as React.CSSProperties}
+        }}
       >
         <span>8004 AGENTS</span>
         <span className="-mt-4 md:-mt-6">NETWORK</span>
       </h1>
 
       <div 
-        className="flex gap-4 mt-1 relative z-10 transition-opacity duration-300"
-        style={{ opacity: elementsOpacity }}
+        ref={buttonsRef}
+        className="flex gap-4 mt-1 relative z-10"
       >
         <RetroPixelButton className="w-32 h-10 border-primary/80 text-sm">
           <span>Deploy</span>
