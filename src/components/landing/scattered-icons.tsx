@@ -99,12 +99,7 @@ export function ScatteredIcons({ opacity = 1 }: { opacity?: number }) {
               left: `${pos.left}%`,
             }}
           >
-            {/* 
-               Pixelation Trick: Render small, scale up.
-               We render the SVG at 25% size (approx 16px) and scale it back up 4x.
-               Start with a slightly larger base to ensure they are recognizable (33% -> 3x).
-            */}
-            <div style={{ width: '33%', height: '33%', pointerEvents: 'none' }}>
+            <div className="w-full h-full pointer-events-none">
                <img 
                 src={`/logos/${icon}`} 
                 alt={icon.replace(".svg", "")} 
@@ -112,13 +107,6 @@ export function ScatteredIcons({ opacity = 1 }: { opacity?: number }) {
                   (icon.includes("grok") || icon.includes("perplexity")) ? "invert dark:invert-0" : 
                   (icon.includes("Anthropic")) ? "dark:invert dark:contrast-200" : ""
                 }`}
-                style={{
-                   width: '100%',
-                   height: '100%',
-                   transform: 'scale(3)', 
-                   transformOrigin: 'top left',
-                   imageRendering: 'pixelated', 
-                }}
               />
             </div>
           </motion.div>

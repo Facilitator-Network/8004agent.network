@@ -6,9 +6,12 @@ import { HeroSection } from "@/components/landing/hero-section"
 
 
 import { IdentitySection } from "@/components/landing/identity-section"
+import { CTASection } from "@/components/landing/cta-section"
 
 
 import { CursorGlow } from "@/components/ui/cursor-glow"
+
+import { PixelConfetti } from "@/components/ui/pixel-confetti"
 
 import { PixelTransition } from "@/components/layout/pixel-transition"
 
@@ -18,6 +21,8 @@ function App() {
   const [path, setPath] = useState(window.location.pathname)
   const [transitionTrigger, setTransitionTrigger] = useState(0)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [confettiTrigger, setConfettiTrigger] = useState(0)
+  const [confettiDirection, setConfettiDirection] = useState<'up' | 'down'>('down')
   const totalSections = 3 // Hero, Identity, Next
 
   useEffect(() => {
@@ -31,7 +36,7 @@ function App() {
           setCurrentSection(0)
           setHeroComplete(false)
           setScrollProgress(0)
-        }, 300)
+        }, 500)
       }
     }
 
@@ -50,7 +55,7 @@ function App() {
 
     let scrollAccumulator = 0 
     // Dynamic threshold: Harder to leave Identity Section (Index 1)
-    const getThreshold = () => currentSection === 1 ? 1200 : 400
+    const getThreshold = () => currentSection === 1 ? 800 : 400 // Reduced for faster scroll per user request
 
     const handleWheel = (e: WheelEvent) => {
       if (currentSection === 0 && !heroComplete) return
@@ -62,7 +67,8 @@ function App() {
         scrollAccumulator = 0
       }
 
-      scrollAccumulator += e.deltaY
+      // Dampen the scroll input for "weighty" feel
+      scrollAccumulator += e.deltaY * 0.6
       
       const threshold = getThreshold()
       const progress = Math.min(Math.abs(scrollAccumulator) / threshold, 1) * 100
@@ -71,10 +77,17 @@ function App() {
       if (Math.abs(scrollAccumulator) >= threshold) {
         if (scrollAccumulator > 0 && currentSection < totalSections - 1) {
           setCurrentSection(prev => prev + 1)
+          setConfettiDirection('down')
+          setConfettiTrigger(prev => prev + 1)
         } else if (scrollAccumulator < 0 && currentSection > 0) {
           setCurrentSection(prev => prev - 1)
           if (currentSection === 1) { // If we are going back to 0
             setHeroComplete(false)
+          }
+          // Only trigger confetti if NOT going back to Hero (index 0)
+          if (currentSection !== 1) {
+            setConfettiDirection('up')
+            setConfettiTrigger(prev => prev + 1)
           }
         }
         scrollAccumulator = 0
@@ -92,6 +105,7 @@ function App() {
         <CursorGlow />
         <Navbar />
         <PixelTransition trigger={transitionTrigger} />
+        <PixelConfetti trigger={confettiTrigger} direction={confettiDirection} />
         
         <main className="flex-1 relative overflow-hidden">
 
@@ -129,7 +143,7 @@ function App() {
                 <IdentitySection isActive={currentSection === 1} />
               </div>
 
-              {/* Next Section Placeholder (Index 2) */}
+              {/* CTA Section (Index 2) */}
               <div
                 className="absolute inset-0 transition-opacity duration-500"
                 style={{
@@ -137,12 +151,7 @@ function App() {
                   pointerEvents: currentSection === 2 ? 'auto' : 'none',
                 }}
               >
-                <div className="h-full w-full flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-4xl font-pixel text-white mb-4">EXPLORE THE NETWORK</h2>
-                    <p className="text-white/50">Access granted. Proceed with caution.</p>
-                  </div>
-                </div>
+                <CTASection isActive={currentSection === 2} />
               </div>
               
               {/* Scroll Progress Bar */}

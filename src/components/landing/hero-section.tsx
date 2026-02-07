@@ -3,6 +3,7 @@ import { ScatteredIcons } from "@/components/landing/scattered-icons"
 import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
+import { navigateTo } from "@/lib/utils"
 
 interface HeroSectionProps {
   onAnimationComplete?: () => void
@@ -135,9 +136,12 @@ export function HeroSection({ onAnimationComplete, isActive }: HeroSectionProps)
       
       <div 
         ref={badgeRef}
-        className="flex items-center gap-2 px-4 py-2 border-2 rounded-xl bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-none transition-all duration-300 relative z-10"
+        className="flex items-center gap-3 px-4 py-2 border-2 bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all duration-300 relative z-10 hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
       >
-        <div className="w-2 h-2 bg-green-500 rounded-sm animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-green-400 opacity-75"></span>
+          <span className="relative inline-flex h-2 w-2 rounded-none bg-green-500"></span>
+        </span>
         <span className="text-xs md:text-sm font-bold font-pixel tracking-[0.2em] uppercase opacity-90">
           Intelligence & Discovery Layer
         </span>
@@ -156,14 +160,22 @@ export function HeroSection({ onAnimationComplete, isActive }: HeroSectionProps)
         <span className="-mt-4 md:-mt-6">NETWORK</span>
       </h1>
 
+
+
       <div 
         ref={buttonsRef}
         className="flex gap-4 mt-1 relative z-10"
       >
-        <RetroPixelButton className="w-32 h-10 border-primary/80 text-sm">
+        <RetroPixelButton 
+          className="w-32 h-10 border-primary/80 text-sm"
+          onClick={() => navigateTo('/deploy')}
+        >
           <span>Deploy</span>
         </RetroPixelButton>
-        <RetroPixelButton className="w-32 h-10 border-primary/80 text-sm">
+        <RetroPixelButton 
+          className="w-32 h-10 border-primary/80 text-sm"
+          onClick={() => navigateTo('/agents')}
+        >
           <span>Hire</span>
         </RetroPixelButton>
       </div>

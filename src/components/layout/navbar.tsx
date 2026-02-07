@@ -89,6 +89,7 @@ export function Navbar() {
                 onMouseLeave={() => setHoveredPath(null)}
                 onClick={(e) => {
                   e.preventDefault()
+                  if (window.location.pathname === link.href) return
                   window.history.pushState({}, "", link.href)
                   window.dispatchEvent(new Event("pushState"))
                 }}

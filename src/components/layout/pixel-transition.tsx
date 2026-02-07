@@ -17,23 +17,22 @@ export function PixelTransition({ trigger }: PixelTransitionProps) {
   const totalPixels = rows * cols
 
   useEffect(() => {
-    if (trigger > 0) {
-      setIsVisible(true)
-      const timer = setTimeout(() => {
-        setIsVisible(false)
-      }, 1500) // Duration of the full sequence
-      return () => clearTimeout(timer)
-    }
+    setIsVisible(true)
+    const timer = setTimeout(() => {
+      setIsVisible(false)
+    }, 1500) // Duration of the full sequence
+    return () => clearTimeout(timer)
   }, [trigger])
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
+          key={trigger}
           className="fixed inset-0 z-[999] pointer-events-none"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, delay: 0.8 }}
+          transition={{ duration: 0.2 }}
         >
           <div 
             className="grid w-full h-full"
@@ -49,9 +48,9 @@ export function PixelTransition({ trigger }: PixelTransitionProps) {
                 animate={{ 
                   opacity: [0, 1, 1, 0], // Appear then disappear
                   transition: {
-                    duration: 1.2,
-                    times: [0, 0.3, 0.7, 1],
-                    delay: Math.random() * 0.5, // Randomized appearance
+                    duration: 0.8,
+                    times: [0, 0.2, 0.8, 1],
+                    delay: Math.random() * 0.3, // Faster appearance
                   }
                 }}
                 className={isDark ? "bg-white" : "bg-black"}

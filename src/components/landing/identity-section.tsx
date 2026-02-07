@@ -225,7 +225,7 @@ export function IdentitySection({ isActive }: IdentitySectionProps) {
                 <motion.h2
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ opacity: 0, y: -50 }}
+                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn" } }}
                   transition={{ duration: 0.8, ease: "easeInOut" }}
                   className="text-4xl md:text-7xl font-pixel text-center"
                 >
@@ -234,13 +234,17 @@ export function IdentitySection({ isActive }: IdentitySectionProps) {
               </PixelBlast>
 
               {showOptions && (
-                <motion.div
+                <motion.div 
                   key="options"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                  className="flex flex-col md:flex-row items-center justify-center gap-16 md:gap-32 w-full perspective-1000"
+                  className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center justify-center z-10"
+                  initial={{ opacity: 0, scale: 0.5 }} // Start small (in confetti)
+                  animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }} // Grow out or shrink back
+                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn", delay: 0.05 } }} // Pop out quickly
+                  transition={{ 
+                    duration: 0.6, 
+                    ease: "backOut",
+                    delay: isActive ? 0.3 : 0 
+                  }}
                 >
                   {/* Human Option */}
                   <div 
@@ -307,8 +311,8 @@ export function IdentitySection({ isActive }: IdentitySectionProps) {
               key="sequence"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full flex flex-col items-center justify-center text-center p-4 min-h-[50vh]"
+              exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn" } }}
+              className="w-full flex flex-col items-center justify-center text-center p-4"
             >
               {/* Single Line Sequence */}
               {sequenceStage >= 1 && (
