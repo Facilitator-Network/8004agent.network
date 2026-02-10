@@ -20,7 +20,7 @@ export function CTASection({ isActive }: CTASectionProps) {
            animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
            transition={{ 
              duration: 0.5, 
-             ease: isActive ? [0.34, 1.56, 0.64, 1] : "backIn", // Overshoot enter, Anticipate exit
+             ease: isActive ? "easeOut" : "easeIn",
              delay: isActive ? 0.3 : 0 
            }}
            className="w-full bg-background border-4 border-foreground relative p-8 md:p-12"
@@ -35,7 +35,7 @@ export function CTASection({ isActive }: CTASectionProps) {
           {/* Header */}
           <div className="text-center space-y-6 mb-16 relative z-10">
             <div className="inline-flex items-center gap-3 px-4 py-1 border-2 border-foreground/30 bg-foreground/5">
-              <span className="w-2 h-2 bg-green-500 animate-pulse" />
+              <span className="w-2 h-2 bg-system-green animate-pulse" />
               <span className="font-pixel text-xs tracking-widest text-foreground/80">SYSTEM_ONLINE // NODE_8004</span>
             </div>
             

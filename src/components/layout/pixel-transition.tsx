@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from "framer-motion"
-import { useTheme } from "@/components/theme-provider"
 import { useEffect, useState } from "react"
 
 interface PixelTransitionProps {
@@ -7,11 +6,9 @@ interface PixelTransitionProps {
 }
 
 export function PixelTransition({ trigger }: PixelTransitionProps) {
-  const { theme } = useTheme()
   const [isVisible, setIsVisible] = useState(false)
-  const isDark = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
-  // Configuration for the grid - Lower density for "bigger pixels"
+  // Configuration for the grid - Smaller pixels (8px)
   const rows = 20
   const cols = 25
   const totalPixels = rows * cols
@@ -53,7 +50,7 @@ export function PixelTransition({ trigger }: PixelTransitionProps) {
                     delay: Math.random() * 0.3, // Faster appearance
                   }
                 }}
-                className={isDark ? "bg-white" : "bg-black"}
+                className="bg-background"
                 style={{
                   width: "102%", // Overlap to prevent subpixel gaps
                   height: "102%",

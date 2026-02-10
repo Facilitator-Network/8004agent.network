@@ -136,11 +136,11 @@ export function HeroSection({ onAnimationComplete, isActive }: HeroSectionProps)
       
       <div 
         ref={badgeRef}
-        className="flex items-center gap-3 px-4 py-2 border-2 bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all duration-300 relative z-10 hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+        className="flex items-center gap-3 px-4 py-2 border-2 rounded-pixel-md bg-white text-black border-black dark:bg-black dark:text-white dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all duration-300 relative z-10 hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
       >
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex h-2 w-2 rounded-none bg-green-500"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-system-green opacity-75"></span>
+          <span className="relative inline-flex h-2 w-2 rounded-none bg-system-green"></span>
         </span>
         <span className="text-xs md:text-sm font-bold font-pixel tracking-[0.2em] uppercase opacity-90">
           Intelligence & Discovery Layer

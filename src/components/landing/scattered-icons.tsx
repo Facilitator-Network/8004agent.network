@@ -105,7 +105,7 @@ export function ScatteredIcons({ opacity = 1 }: { opacity?: number }) {
                 alt={icon.replace(".svg", "")} 
                 className={`w-full h-full object-contain pointer-events-none ${
                   (icon.includes("grok") || icon.includes("perplexity")) ? "invert dark:invert-0" : 
-                  (icon.includes("Anthropic")) ? "dark:invert dark:contrast-200" : ""
+                  (icon.includes("Anthropic")) ? "dark:invert dark:opacity-30 opacity-60" : ""
                 }`}
               />
             </div>

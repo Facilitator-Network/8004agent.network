@@ -20,12 +20,13 @@ export default {
       },
   		fontFamily: {
   			sans: ['Inter', 'sans-serif'],
-			pixel: ['"Pixelify Sans"', 'sans-serif'],
+		pixel: ['"Pixelify Sans"', 'sans-serif'],
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			'none': '0',
+  			'pixel-sm': '6px',
+  			'pixel-md': '8px',
+  			'pixel-lg': '10px',
   		},
   		colors: {
   			background: 'hsl(var(--background))',
@@ -61,13 +62,11 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
+  			'system-green': 'hsl(var(--system-green))',
+  			'info-blue': 'hsl(var(--info-blue))',
+  			'warning-amber': 'hsl(var(--warning-amber))',
+  			'error-red': 'hsl(var(--error-red))',
+  			'system-muted': 'hsl(var(--system-muted))'
   		}
   	}
   },

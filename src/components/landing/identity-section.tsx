@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 
 interface IdentitySectionProps {
   isActive: boolean
+  onIdentitySelected?: (type: "human" | "agent") => void
 }
 
 type IdentityType = "human" | "agent"
@@ -18,8 +19,8 @@ function TiltCard({ children, className }: { children: React.ReactNode, classNam
   const mouseX = useSpring(x, { stiffness: 500, damping: 100 })
   const mouseY = useSpring(y, { stiffness: 500, damping: 100 })
 
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], ["15deg", "-15deg"])
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-15deg", "15deg"])
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ["8deg", "-8deg"])
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-8deg", "8deg"])
 
   function onMouseMove(event: React.MouseEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -115,7 +116,7 @@ function TypewriterText({
   return <span className={className}>{displayed}<span className="animate-pulse">_</span></span>
 }
 
-export function IdentitySection({ isActive }: IdentitySectionProps) {
+export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectionProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("question")
   const [showOptions, setShowOptions] = useState(false)
   const [isExploding, setIsExploding] = useState(false)
@@ -156,6 +157,11 @@ export function IdentitySection({ isActive }: IdentitySectionProps) {
     if (isExploding) return
     setIsExploding(true)
     setSelectedType(type)
+    
+    // Notify parent component of identity selection
+    if (onIdentitySelected) {
+      onIdentitySelected(type)
+    }
     
     // Blast the OTHER one
     setBlastingTarget(type === "human" ? "agent" : "human")

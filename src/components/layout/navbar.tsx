@@ -101,7 +101,7 @@ export function Navbar() {
 
           {/* Right: Login + Theme Toggle */}
           <div className="flex items-center gap-3">
-            <button className="text-[10px] px-3 py-2 border border-current hover:bg-foreground hover:text-background transition-colors">
+            <button className="text-[10px] px-3 py-2 border border-current rounded-pixel-md hover:bg-foreground hover:text-background transition-colors">
               LOGIN
             </button>
             <Button

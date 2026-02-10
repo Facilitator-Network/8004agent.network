@@ -17,7 +17,7 @@ export function StatusBar() {
           {/* Left: Status Indicator + Network Stats */}
           <div className="flex items-center gap-4 text-[8px] tracking-tighter">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-none bg-system-green animate-pulse" />
               <div className="flex items-center gap-[1px] opacity-70">
                 <span>NETWORK:</span>
                 <span>ACTIVE</span>
