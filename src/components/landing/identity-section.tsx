@@ -4,12 +4,14 @@ import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import { PixelBlast } from "@/components/ui/pixel-blast"
 import { TypewriterText } from "@/components/ui/typewriter-text"
 import { RegistrationModal } from "./registration-modal"
+import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 import { cn } from "@/lib/utils"
 
 interface IdentitySectionProps {
   isActive: boolean
   onIdentitySelected?: (type: "human" | "agent") => void
   onAnimationComplete?: () => void
+  identityComplete?: boolean
 }
 
 type IdentityType = "human" | "agent"
@@ -143,9 +145,10 @@ function FloatingNames({ names, isActive }: { names: string[], isActive: boolean
   )
 }
 
-export function IdentitySection({ isActive, onIdentitySelected, onAnimationComplete }: IdentitySectionProps) {
+
+export function IdentitySection({ isActive, onIdentitySelected, onAnimationComplete, identityComplete }: IdentitySectionProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("question")
-  const [showOptions, setShowOptions] = useState(false)
+  const [showOptions, setShowOptions] = useState(identityComplete || false)
   const [isExploding, setIsExploding] = useState(false)
   
   // Sequence State Management
@@ -183,9 +186,9 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
       setSequenceStage(0)
       setSelectedType(null)
     } else {
-      setShowOptions(false)
+      setShowOptions(identityComplete || false)
     }
-  }, [isActive])
+  }, [isActive, identityComplete])
 
   // Trigger animation complete when options are shown
   useEffect(() => {
@@ -293,7 +296,7 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
 
                   <PixelBlast active={isExploding} className="mb-12 md:mb-24 z-20 w-full flex flex-col items-center">
                     <div className="h-20 flex items-center justify-center">
-                      {isActive && (
+                      {isActive && !identityComplete && (
                         <TypewriterText
                           key={`typewriter-${isActive}`} // Force restart on activation
                           text="ARE YOU HUMAN OR AI AGENT?"
@@ -302,6 +305,11 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
                           onComplete={() => setShowOptions(true)}
                           className="text-3xl md:text-5xl lg:text-7xl font-pixel text-center uppercase tracking-tight"
                         />
+                      )}
+                      {isActive && identityComplete && (
+                           <h2 className="text-3xl md:text-5xl lg:text-7xl font-pixel text-center uppercase tracking-tight">
+                             ARE YOU HUMAN OR AI AGENT?
+                           </h2>
                       )}
                     </div>
                     {showOptions && (
@@ -456,6 +464,20 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
           onSubmit={handleRegistrationSubmit}
         />
       )}
+      {/* Scroll Indicator */}
+      <AnimatePresence>
+        {isActive && showOptions && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0 } }} // Instant vanish
+            transition={{ delay: 1.5, duration: 0.5 }} // Delay appearance
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20"
+          >
+            <ScrollIndicator />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

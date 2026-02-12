@@ -43,12 +43,23 @@ export function PixelCardCover({ className, progress }: PixelCardCoverProps) {
   const cols = 10
   
   const pixels = useMemo(() => {
-    return Array.from({ length: rows * cols }).map((_, i) => ({
-      id: i,
-      // Deterministic randomness
-      // Spread thresholds up to 0.75 so they finish by 0.90 (leaving 10% buffer)
-      threshold: ((i * 137) % 100) / 100 * 0.75 
-    }))
+    return Array.from({ length: rows * cols }).map((_, i) => {
+      const col = i % cols
+      const center = (cols - 1) / 2
+      const dist = Math.abs(col - center) / center // 0 to 1 (normalized)
+      
+      // Pseudo-random jitter based on index
+      const random = ((i * 137) % 100) / 100
+      
+      // Threshold: Closer to center = lower threshold (vanish sooner)
+      // Dist component (0.6) + Random component (0.15) = max ~0.75
+      const threshold = (dist * 0.6) + (random * 0.15)
+      
+      return {
+        id: i,
+        threshold
+      }
+    })
   }, [])
 
   return (

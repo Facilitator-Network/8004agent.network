@@ -21,13 +21,10 @@ function App() {
   const lifecycleRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // When entering Lifecycle section (index 2), lock scroll for 1.5s
+    // When entering Lifecycle section (index 2), lock scroll initially
+    // Unlock will be triggered by LifecycleSection after typewriter animation
     if (currentSection === 2) {
       setIsLifecycleLocked(true)
-      const timer = setTimeout(() => {
-        setIsLifecycleLocked(false)
-      }, 1500)
-      return () => clearTimeout(timer)
     }
   }, [currentSection])
 
@@ -177,6 +174,7 @@ function App() {
                   isActive={currentSection === 1}
                   onIdentitySelected={(type) => setIdentityType(type)}
                   onAnimationComplete={() => setIdentityComplete(true)}
+                  identityComplete={identityComplete}
                 />
               </div>
 
@@ -195,6 +193,7 @@ function App() {
                   isActive={currentSection === 2}
                   identityType={identityType}
                   scrollContainerRef={lifecycleRef}
+                  unlockScroll={() => setIsLifecycleLocked(false)}
                 />
               </div>
 
