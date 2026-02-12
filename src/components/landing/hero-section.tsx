@@ -85,7 +85,9 @@ export function HeroSection({ onAnimationComplete, isActive }: HeroSectionProps)
       timelineRef.current?.progress(progress)
 
       // Notify completion
-      if (progress >= 1 && onAnimationComplete) {
+      // Trigger slightly before 1.0 (0.99) to ensure we don't get stuck due to float precision
+      // And ensure we are strictly moving forward (delta > 0)
+      if (progress >= 0.99 && onAnimationComplete && wheelEvent.deltaY > 0) {
         onAnimationComplete()
       }
     }

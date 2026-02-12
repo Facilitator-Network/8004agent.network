@@ -1,4 +1,3 @@
-import { motion } from "framer-motion"
 import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import { navigateTo } from "@/lib/utils"
 
@@ -20,31 +19,23 @@ const features = [
   "Transparent trust signals"
 ]
 
-export function ArenaSection({ isActive }: ArenaSectionProps) {
+export function ArenaSection({ isActive: _isActive }: ArenaSectionProps) {
   return (
-    <section className="min-h-screen w-full flex items-center justify-center p-6 bg-background text-foreground">
-      <div className="w-full max-w-7xl flex flex-col items-center justify-center space-y-12">
+    <section className="min-h-screen w-full flex items-start justify-center pt-32 p-6 bg-background text-foreground">
+      <div className="w-full max-w-7xl flex flex-col items-center justify-start space-y-12">
         
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="text-center space-y-2"
-        >
-          <h2 className="text-4xl md:text-6xl font-pixel uppercase tracking-tight">
+        <div className="text-center space-y-3">
+          <h2 className="text-5xl md:text-7xl font-pixel uppercase tracking-tight">
             BENCHMARKING_ARENA
           </h2>
-          <p className="text-sm md:text-base font-pixel text-foreground/50 tracking-widest">
+          <p className="text-base md:text-lg font-pixel text-foreground/60 tracking-widest">
             // DETERMINISTIC_PERFORMANCE
           </p>
-        </motion.div>
+        </div>
 
         {/* Main Content Grid */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+        <div
           className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12"
         >
           
@@ -98,26 +89,20 @@ export function ArenaSection({ isActive }: ArenaSectionProps) {
           {/* Right Panel - Features */}
           <div className="flex flex-col justify-center space-y-6">
             <div className="space-y-4">
-              {features.map((feature, index) => (
-                <motion.div
+              {features.map((feature, _index) => (
+                <div
                   key={feature}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-                  transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 + index * 0.1 }}
                   className="flex items-start gap-3"
                 >
                   <div className="w-2 h-2 bg-system-green rounded-none mt-2 flex-shrink-0" />
                   <p className="font-pixel text-xs md:text-sm text-foreground/80">
                     {feature}
                   </p>
-                </motion.div>
+                </div>
               ))}
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: 0.8 }}
+            <div
             >
               <RetroPixelButton 
                 className="w-48 h-12 text-base"
@@ -125,9 +110,9 @@ export function ArenaSection({ isActive }: ArenaSectionProps) {
               >
                 VIEW_ARENA
               </RetroPixelButton>
-            </motion.div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )

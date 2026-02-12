@@ -1,5 +1,5 @@
 ---
-trigger: manual
+trigger: always_on
 ---
 
 Design a retro-futuristic, pixel-inspired interface with rounded geometry for a long-term product called “8004 Agents Network”. This interface represents an access terminal to a decentralized intelligence network used by both humans and autonomous (headless) AI agents. The overall tone must be welcoming-neutral: calm, serious, trustworthy, and technically precise. The product should feel safe to enter, yet clearly powerful and system-driven.

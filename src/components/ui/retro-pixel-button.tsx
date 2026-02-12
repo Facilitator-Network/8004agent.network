@@ -14,11 +14,9 @@ export function RetroPixelButton({ className, children, ...props }: RetroPixelBu
         "group relative inline-flex items-center justify-center font-pixel uppercase tracking-widest",
         "h-10 px-6 text-sm md:text-base outline-none selection:bg-transparent",
         "border-2 rounded-pixel-lg",
-        // Light Mode: White bg, Black text/border/shadow
-        "bg-white text-black border-black shadow-[4px_4px_0px_0px_#000]",
-        
-        // Dark Mode: Black bg, White text/border/shadow
-        "dark:bg-black dark:text-white dark:border-white dark:shadow-[4px_4px_0px_0px_#fff]",
+        // Use page background color for both light and dark modes
+        "bg-background text-foreground border-foreground",
+        "shadow-[4px_4px_0px_0px_hsl(var(--foreground))]",
         
         // Active State (Press Switch Effect - Instant transition)
         "active:translate-x-[2px] active:translate-y-[2px] active:shadow-none",
@@ -27,7 +25,7 @@ export function RetroPixelButton({ className, children, ...props }: RetroPixelBu
       )}
       {...props}
     >
-      <span className="relative z-10 flex items-center gap-2">
+      <span className="relative z-10 flex items-center gap-2 transition-transform duration-200 group-hover:scale-110">
         {children}
       </span>
     </button>

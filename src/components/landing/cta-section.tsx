@@ -1,4 +1,3 @@
-import { motion } from "framer-motion"
 import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import { navigateTo } from "@/lib/utils"
 
@@ -8,21 +7,14 @@ interface CTASectionProps {
 
 
 
-export function CTASection({ isActive }: CTASectionProps) {
+export function CTASection({ isActive: _isActive }: CTASectionProps) {
 
   return (
     <section className="h-full w-full flex items-center justify-center p-6 bg-background text-foreground">
       <div className="w-full max-w-5xl flex flex-col items-center justify-center">
         
         {/* Pixel Box Container */}
-        <motion.div
-           initial={{ opacity: 0, scale: 0.5 }}
-           animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-           transition={{ 
-             duration: 0.5, 
-             ease: isActive ? "easeOut" : "easeIn",
-             delay: isActive ? 0.3 : 0 
-           }}
+        <div
            className="w-full bg-background border-4 border-foreground relative p-8 md:p-12"
            style={{ boxShadow: "16px 16px 0px 0px rgba(var(--foreground), 1)" }} // using css variable directly if possible, or standard usage
         >
@@ -96,7 +88,7 @@ export function CTASection({ isActive }: CTASectionProps) {
 
           </div>
 
-        </motion.div>
+        </div>
       </div>
     </section>
   )

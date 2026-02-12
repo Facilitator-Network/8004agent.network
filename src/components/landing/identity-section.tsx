@@ -1,16 +1,21 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import { PixelBlast } from "@/components/ui/pixel-blast"
+import { TypewriterText } from "@/components/ui/typewriter-text"
+import { RegistrationModal } from "./registration-modal"
 import { cn } from "@/lib/utils"
 
 interface IdentitySectionProps {
   isActive: boolean
   onIdentitySelected?: (type: "human" | "agent") => void
+  onAnimationComplete?: () => void
 }
 
 type IdentityType = "human" | "agent"
 type ViewMode = "question" | "human-details" | "agent-details"
+
+// ... (TiltCard and FloatingNames components remain unchanged)
 
 function TiltCard({ children, className }: { children: React.ReactNode, className?: string }) {
   const x = useMotionValue(0)
@@ -62,75 +67,94 @@ const toHex = (str: string) => {
   return str.split('').map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')).join(' ')
 }
 
-// Enhanced Typewriter Component with Deleting Support
-function TypewriterText({ 
-  text, 
-  onComplete, 
-  mode = "type", 
-  speed = 50, 
-  deleteSpeed = 30,
-  className 
-}: { 
-  text: string, 
-  onComplete?: () => void, 
-  mode?: "type" | "delete", 
-  speed?: number, 
-  deleteSpeed?: number,
-  className?: string 
-}) {
-  const [displayed, setDisplayed] = useState(mode === "delete" ? text : "")
-  
-  useEffect(() => {
-    // If typing, start from empty. If deleting, start from full.
-    // However, if we switch modes, we want to respect current content or just reset?
-    // For simplicity in this sequence: Typing always starts from 0, Deleting always starts from text.
-    if (mode === "type") setDisplayed("")
-    else setDisplayed(text)
 
-    let i = mode === "type" ? 0 : text.length
-    
-    const timer = setInterval(() => {
-      if (mode === "type") {
-        if (i < text.length) {
-          setDisplayed(prev => prev + text.charAt(i))
-          i++
-        } else {
-          clearInterval(timer)
-          if (onComplete) onComplete()
-        }
-      } else {
-        // Deleting
-        if (i > 0) {
-          setDisplayed(prev => prev.slice(0, -1))
-          i--
-        } else {
-          clearInterval(timer)
-          if (onComplete) onComplete()
-        }
-      }
-    }, mode === "type" ? speed : deleteSpeed)
-    
-    return () => clearInterval(timer)
-  }, [text, mode, speed, deleteSpeed]) // Depend on mode to restart effect
 
-  return <span className={className}>{displayed}<span className="animate-pulse">_</span></span>
+// Floating Names Component
+function FloatingNames({ names, isActive }: { names: string[], isActive: boolean }) {
+  // Pre-defined positions constraints to avoid overlap (relative to center)
+  // We'll pick random names for each slot
+  const slots = useMemo(() => {
+    const positions = [
+      { top: "35%", left: "110%" },   // Higher Left fixed
+      { top: "0%", left: "-35%" },   // Highest Left-Center fixed
+      { top: "10%", left: "100%" },   // Highest Right-Center
+      { top: "30%", left: "-35%" },   // High Right
+      { top: "-15%", left: "10%" },      // Low Left fixed
+      { top: "-10%", left: "60%" },    // Low Right fixed
+    ]
+    
+    // Shuffle names and pick 6 to match positions
+    const shuffledNames = [...names].sort(() => Math.random() - 0.5).slice(0, 6)
+    
+    return positions.map((pos, i) => ({
+      ...pos,
+      text: shuffledNames[i],
+      id: i,
+      // Random float animation params
+      duration: 3 + Math.random() * 2,
+      delay: Math.random() * 0.5
+    }))
+  }, [names])
+
+  return (
+    <AnimatePresence>
+      {isActive && (
+        <div className="absolute inset-0 pointer-events-none z-0">
+           {slots.map((slot) => (
+             <motion.div
+               key={slot.id}
+               className="absolute font-pixel text-system-green/40 whitespace-nowrap text-lg md:text-xl transform -translate-x-1/2 -translate-y-1/2"
+               style={{ 
+                 top: slot.top, 
+                 left: slot.left,
+                 opacity: 0 
+               }}
+               initial={{ opacity: 0, scale: 0.8 }}
+               animate={{ 
+                 opacity: 1, 
+                 scale: 1,
+                 y: [0, -10, 0],
+                 x: [0, 5, 0]
+               }}
+               exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+               transition={{
+                 opacity: { duration: 0.4 },
+                 scale: { duration: 0.4 },
+                 y: { 
+                   repeat: Infinity, 
+                   duration: slot.duration, 
+                   ease: "easeInOut", 
+                   repeatType: "reverse" 
+                 },
+                 x: {
+                    repeat: Infinity,
+                    duration: slot.duration * 1.2,
+                    ease: "easeInOut",
+                    repeatType: "reverse"
+                 }
+               }}
+             >
+               {slot.text}
+             </motion.div>
+           ))}
+        </div>
+      )}
+    </AnimatePresence>
+  )
 }
 
-export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectionProps) {
+export function IdentitySection({ isActive, onIdentitySelected, onAnimationComplete }: IdentitySectionProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("question")
   const [showOptions, setShowOptions] = useState(false)
   const [isExploding, setIsExploding] = useState(false)
   
   // Sequence State Management
-  // 0: Init
-  // 1: Type Line 1
-  // 2: Wait Line 1
-  // 3: Delete Line 1
-  // 4: Type Line 2
-  // 5: Wait Line 2
-  // 6: Delete Line 2
   const [sequenceStage, setSequenceStage] = useState(0)
   const [selectedType, setSelectedType] = useState<IdentityType | null>(null)
+
+  // Registration Modal State
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false)
+  const [pendingIdentityType, setPendingIdentityType] = useState<IdentityType | null>(null)
 
   // Track hover state for blur effect
   const [hovered, setHovered] = useState<IdentityType | null>(null)
@@ -138,30 +162,47 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
   // Track which option was clicked to trigger the blast on the OTHER one
   const [blastingTarget, setBlastingTarget] = useState<IdentityType | null>(null)
 
+  // Name Lists for Hover Effect
+  const humanNames = [
+    "vitalik", "elon", "satoshi", "sam", "ada", "grace", "alan", "linus", 
+    "tim", "steve", "sergey", "larry", "mark", "bill", "dennis", "ken", 
+    "guido", "yukihiro", "brendan", "james", "nakamoto", "turing", "lovelace"
+  ]
+  const agentNames = [
+    "gpt", "claude", "llama", "mistral", "gemini", "bard", "copilot",
+    "midjourney", "dall-e", "stable", "diffusion", "grok", "palm", "bert",
+    "vicuna", "alpaca", "falcon", "qwen", "yi", "phi", "solar"
+  ]
+
   // Reset state when section becomes inactive
   useEffect(() => {
     if (!isActive) {
-      setShowOptions(false)
       setViewMode("question")
       setIsExploding(false)
       setBlastingTarget(null)
       setSequenceStage(0)
       setSelectedType(null)
     } else {
-      const timer = setTimeout(() => setShowOptions(true), 0)
-      return () => clearTimeout(timer)
+      setShowOptions(false)
     }
   }, [isActive])
+
+  // Trigger animation complete when options are shown
+  useEffect(() => {
+    if (showOptions && onAnimationComplete) {
+      // Wait for options spring animation to settle (~800ms)
+      const timer = setTimeout(() => {
+        onAnimationComplete()
+      }, 800)
+      return () => clearTimeout(timer)
+    }
+  }, [showOptions, onAnimationComplete])
 
   const handleSelection = (type: IdentityType) => {
     if (isExploding) return
     setIsExploding(true)
     setSelectedType(type)
-    
-    // Notify parent component of identity selection
-    if (onIdentitySelected) {
-      onIdentitySelected(type)
-    }
+    setPendingIdentityType(type)
     
     // Blast the OTHER one
     setBlastingTarget(type === "human" ? "agent" : "human")
@@ -175,6 +216,27 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
       // Start Sequence: Type Line 1
       setSequenceStage(1)
     }, 800)
+  }
+
+  const handleRegistrationSubmit = (name: string) => {
+    console.log(`Registered: ${name}.${pendingIdentityType}`)
+    // Notify parent component of identity selection
+    if (onIdentitySelected && pendingIdentityType) {
+      onIdentitySelected(pendingIdentityType)
+    }
+  }
+
+  const handleRegistrationClose = () => {
+    setShowRegistrationModal(false)
+    // Reset to identity selection screen
+    setTimeout(() => {
+      setViewMode("question")
+      setIsExploding(false)
+      setBlastingTarget(null)
+      setSequenceStage(0)
+      setSelectedType(null)
+      setPendingIdentityType(null)
+    }, 300)
   }
 
   // Sequence Handlers
@@ -194,11 +256,8 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
   }
 
   const handleLine2Deleted = () => {
-    // Reset to Start
-    setViewMode("question")
-    setSequenceStage(0)
-    setSelectedType(null)
-    setShowOptions(true)
+    // After line 2 is deleted, show registration form
+    setShowRegistrationModal(true)
   }
 
   // Content Mapping
@@ -216,99 +275,140 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
   const currentContent = selectedType ? content[selectedType] : content.human
 
   return (
-    <section className="min-h-screen w-full flex items-center justify-center p-6 bg-background text-foreground transition-colors duration-300">
-      <div className="w-full max-w-7xl flex flex-col items-center justify-center space-y-12 md:space-y-24">
+    <section className="min-h-screen w-full flex flex-col items-center justify-start pt-32 p-6 text-foreground transition-colors duration-300 relative">
+      <div className="w-full max-w-7xl flex flex-col items-center justify-start space-y-12 md:space-y-24 flex-grow relative">
         <AnimatePresence mode="wait">
-          {viewMode === "question" && isActive && (
+          {viewMode === "question" && (
              <motion.div
               key="question-container"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center w-full"
+              className="w-full h-full relative"
             >
-              <PixelBlast active={isExploding} className="mb-8 md:mb-16">
-                <motion.h2
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn" } }}
-                  transition={{ duration: 0.8, ease: "easeInOut" }}
-                  className="text-4xl md:text-7xl font-pixel text-center"
-                >
-                  ARE YOU HUMAN OR AI AGENT?
-                </motion.h2>
+              <PixelBlast active={!isActive} className="w-full h-full">
+                <div className="flex flex-col items-center justify-start w-full relative h-full">
+                  {/* Shattering Background Layer */}
+                  <div className="absolute -inset-[100vw] bg-background -z-10" />
+
+                  <PixelBlast active={isExploding} className="mb-12 md:mb-24 z-20 w-full flex flex-col items-center">
+                    <div className="h-20 flex items-center justify-center">
+                      {isActive && (
+                        <TypewriterText
+                          key={`typewriter-${isActive}`} // Force restart on activation
+                          text="ARE YOU HUMAN OR AI AGENT?"
+                          mode="type"
+                          speed={30}
+                          onComplete={() => setShowOptions(true)}
+                          className="text-3xl md:text-5xl lg:text-7xl font-pixel text-center uppercase tracking-tight"
+                        />
+                      )}
+                    </div>
+                    {showOptions && (
+                      <motion.p 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, ease: "backOut" }}
+                        className="text-base md:text-lg font-pixel text-foreground/60 tracking-widest text-center mt-3"
+                      >
+                        // CHOOSE_YOUR_PATH
+                      </motion.p>
+                    )}
+                  </PixelBlast>
+
+                  {showOptions && (
+                    <motion.div 
+                      key="options"
+                      className="w-full max-w-5xl flex items-center justify-center gap-24 md:gap-48 z-10"
+                      initial={{ opacity: 0, scale: 0.5 }} 
+                      animate={{ opacity: 1, scale: 1 }} 
+                      exit={{ opacity: 0, scale: 0.5 }} 
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                        delay: 0.2 // Delay after title
+                      }}
+                    >
+                      {/* Human Option */}
+                      <div 
+                        className={cn(
+                          "group cursor-pointer transition-all duration-500 relative", 
+                          hovered === "agent" && "blur-sm opacity-40 scale-95 grayscale"
+                        )}
+                        onClick={() => handleSelection("human")}
+                        onMouseEnter={() => setHovered("human")}
+                        onMouseLeave={() => setHovered(null)}
+                      >
+                        <FloatingNames names={humanNames} isActive={hovered === "human"} />
+                        
+                        <PixelBlast active={blastingTarget === "human"}>
+                          <div className="flex flex-col items-center gap-8 relative z-10">
+                            <TiltCard className="relative">
+                              <motion.img 
+                                src="/art/human.svg" 
+                                alt="Human" 
+                                className="w-40 h-40 md:w-64 md:h-64 transition-all duration-300 dark:invert opacity-70 group-hover:opacity-100"
+                                initial={{ opacity: 0, y: 50, scale: 0.8 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{ duration: 0.6, ease: "backOut", delay: 0.2 }}
+                              />
+                            </TiltCard>
+                            <motion.div
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: 0.8 }}
+                              className="mt-8"
+                            >
+                              <RetroPixelButton className="w-48 h-12 md:h-14 text-xl">
+                                HUMAN
+                              </RetroPixelButton>
+                            </motion.div>
+                          </div>
+                        </PixelBlast>
+                      </div>
+
+                      {/* Agent Option */}
+                      <div 
+                        className={cn(
+                          "group cursor-pointer transition-all duration-500 relative", 
+                          hovered === "human" && "blur-sm opacity-40 scale-95 grayscale"
+                        )}
+                        onClick={() => handleSelection("agent")}
+                        onMouseEnter={() => setHovered("agent")}
+                        onMouseLeave={() => setHovered(null)}
+                      >
+                        <FloatingNames names={agentNames} isActive={hovered === "agent"} />
+
+                        <PixelBlast active={blastingTarget === "agent"}>
+                          <div className="flex flex-col items-center gap-8 relative z-10">
+                            <TiltCard className="relative">
+                               <motion.img 
+                                src="/art/robot.svg" 
+                                alt="AI Agent" 
+                                className="w-40 h-40 md:w-64 md:h-64 transition-all duration-300 dark:invert opacity-70 group-hover:opacity-100"
+                                initial={{ opacity: 0, y: 50, scale: 0.8 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                transition={{ duration: 0.6, ease: "backOut", delay: 0.4 }} // Staggered slightly
+                              />
+                            </TiltCard>
+                            <motion.div
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: 1.0 }} // Staggered Button
+                              className="mt-8"
+                            >
+                              <RetroPixelButton className="w-48 h-12 md:h-14 text-xl">
+                                AI AGENT
+                              </RetroPixelButton>
+                            </motion.div>
+                          </div>
+                        </PixelBlast>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               </PixelBlast>
-
-              {showOptions && (
-                <motion.div 
-                  key="options"
-                  className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center justify-center z-10"
-                  initial={{ opacity: 0, scale: 0.5 }} // Start small (in confetti)
-                  animate={isActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }} // Grow out or shrink back
-                  exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn", delay: 0.05 } }} // Pop out quickly
-                  transition={{ 
-                    duration: 0.6, 
-                    ease: "backOut",
-                    delay: isActive ? 0.3 : 0 
-                  }}
-                >
-                  {/* Human Option */}
-                  <div 
-                    className={cn(
-                      "group cursor-pointer transition-all duration-500",
-                      hovered === "agent" && "blur-sm opacity-40 scale-95 grayscale"
-                    )}
-                    onClick={() => handleSelection("human")}
-                    onMouseEnter={() => setHovered("human")}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <PixelBlast active={blastingTarget === "human"}>
-                      <div className="flex flex-col items-center gap-8">
-                        <TiltCard className="relative">
-                          <motion.img 
-                            src="/art/human.svg" 
-                            alt="Human" 
-                            className="w-40 h-40 md:w-64 md:h-64 transition-all duration-300 dark:invert opacity-70 group-hover:opacity-100"
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        </TiltCard>
-                        <RetroPixelButton className="w-48 h-12 md:h-14 text-xl mt-8">
-                          HUMAN
-                        </RetroPixelButton>
-                      </div>
-                    </PixelBlast>
-                  </div>
-
-                  {/* Agent Option */}
-                  <div 
-                    className={cn(
-                      "group cursor-pointer transition-all duration-500",
-                      hovered === "human" && "blur-sm opacity-40 scale-95 grayscale"
-                    )}
-                    onClick={() => handleSelection("agent")}
-                    onMouseEnter={() => setHovered("agent")}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <PixelBlast active={blastingTarget === "agent"}>
-                      <div className="flex flex-col items-center gap-8">
-                        <TiltCard className="relative">
-                           <motion.img 
-                            src="/art/robot.svg" 
-                            alt="AI Agent" 
-                            className="w-40 h-40 md:w-64 md:h-64 transition-all duration-300 dark:invert opacity-70 group-hover:opacity-100"
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        </TiltCard>
-                        <RetroPixelButton className="w-48 h-12 md:h-14 text-xl mt-8">
-                          AI AGENT
-                        </RetroPixelButton>
-                      </div>
-                    </PixelBlast>
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
 
@@ -318,7 +418,7 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn" } }}
-              className="w-full flex flex-col items-center justify-center text-center p-4"
+              className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"
             >
               {/* Single Line Sequence */}
               {sequenceStage >= 1 && (
@@ -346,6 +446,16 @@ export function IdentitySection({ isActive, onIdentitySelected }: IdentitySectio
           )}
         </AnimatePresence>
       </div>
+
+      {/* Registration Modal */}
+      {pendingIdentityType && (
+        <RegistrationModal
+          isOpen={showRegistrationModal}
+          identityType={pendingIdentityType}
+          onClose={handleRegistrationClose}
+          onSubmit={handleRegistrationSubmit}
+        />
+      )}
     </section>
   )
 }
