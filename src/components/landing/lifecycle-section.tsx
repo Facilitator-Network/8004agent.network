@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useTransform, useSpring } from "framer-motion"
 import { RetroPixelButton } from "@/components/ui/retro-pixel-button"
 import { AnimatedConnection } from "./animated-connection"
 import { ScrambleText } from "@/components/ui/scramble-text"
@@ -74,8 +74,31 @@ const steps = {
 
 export function LifecycleSection({ isActive, identityType, scrollContainerRef }: LifecycleSectionProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [titleComplete, setTitleComplete] = useState(false)
   const isHuman = identityType === "human"
   const currentSteps = isHuman ? steps.human : steps.agent
+  
+  // Reset title complete when identity type changes
+  useState(() => {
+    setTitleComplete(false)
+  })
+
+  // Better to use useEffect for side effects, but useState initializer runs once. 
+  // Actually, we want to reset WHEN identityType changes.
+  if (isActive && !titleComplete) {
+     // logic handled by onComplete
+  }
+
+  // Effect to reset titleComplete when identityType changes
+  // We can key the component to force reset, but state reset is cleaner 
+  // Actually, the key on TypewriterText `key={...}` forces a remount of Typewriter, so onComplete will fire again?
+  // No, we want onComplete to fire when it finishes.
+  
+  // Let's use a ref or effect to reset.
+  // Actually, since we change `steps` based on `identityType`, and `TypewriterText` has a key including `isHuman`,
+  // The Typewriter will remount. usage of `setTitleComplete(false)` in an effect dependent on `identityType` is correct.
+
+ 
   
   const title = isHuman ? "AGENT_PROTOCOL" : "YOUR OPERATIONAL CYCLE"
   const subtitle = isHuman ? "// LIFECYCLE_OVERVIEW" : "// AGENT_PROTOCOL"
@@ -124,6 +147,7 @@ export function LifecycleSection({ isActive, identityType, scrollContainerRef }:
                 mode="type"
                 speed={50}
                 className="text-5xl md:text-7xl font-pixel uppercase tracking-tight block"
+                onComplete={() => setTitleComplete(true)} // Trigger reveal
               />
             )}
             <p className="text-base md:text-lg font-pixel text-foreground/60 tracking-widest mt-2">
@@ -143,6 +167,7 @@ export function LifecycleSection({ isActive, identityType, scrollContainerRef }:
                 totalSteps={currentSteps.length}
                 hoveredCard={hoveredCard}
                 setHoveredCard={setHoveredCard}
+                forceReveal={index === 0 && titleComplete} // Only first card, when title done
               />
             ))}
           </div>
@@ -179,7 +204,8 @@ function LifecycleStep({
   isHuman, 
   totalSteps,
   hoveredCard,
-  setHoveredCard
+  setHoveredCard,
+  forceReveal
 }: { 
   step: { number: string, title: string, text: string }
   index: number
@@ -188,11 +214,29 @@ function LifecycleStep({
   totalSteps: number
   hoveredCard: number | null
   setHoveredCard: (i: number | null) => void
+  forceReveal: boolean
 }) {
   // Logic from getCardProgress
   const start = 0.30 + (index * 0.12)
   const end = start + 0.14
-  const progress = useTransform(scrollYProgress, [start, end], [0, 1])
+  const scrollProgress = useTransform(scrollYProgress, [start, end], [0, 1])
+
+  // Manual Reveal Logic (Spring for smoothness)
+  // We use useMotionValue to control it, but useSpring is better for "auto" movement
+  const manualProgress = useSpring(0, { stiffness: 50, damping: 20 })
+
+  // Trigger spring when forceReveal is true
+  if (forceReveal) {
+    manualProgress.set(1)
+  } else {
+    manualProgress.set(0)
+  }
+
+  // Combine: Take the max of scroll or manual
+  const combinedProgress = useTransform(
+    [scrollProgress, manualProgress],
+    ([s, m]: any[]) => Math.max(s, m)
+  )
 
   return (
     <div className="relative flex flex-col items-center">
@@ -200,7 +244,7 @@ function LifecycleStep({
       <div className="relative w-full h-[480px]">
         
         {/* Pixel Overlay Cover */}
-        <PixelCardCover progress={progress} className="z-20 pointer-events-none -inset-1" />
+        <PixelCardCover progress={combinedProgress} className="z-20 pointer-events-none -inset-1" />
 
         {/* Actual Card Content */}
         <div 
@@ -239,7 +283,7 @@ function LifecycleStep({
       {index < totalSteps - 1 && (
         <motion.div 
           className="absolute top-1/2 -translate-y-1/2 left-[calc(100%+4px)] w-[16px] z-0 pointer-events-none"
-          style={{ opacity: progress }} // Fade in connection with the card
+          style={{ opacity: combinedProgress }} // Fade in connection with the card
         >
           <AnimatedConnection 
             index={index} 

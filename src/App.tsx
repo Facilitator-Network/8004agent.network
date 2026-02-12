@@ -16,8 +16,20 @@ function App() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [identityComplete, setIdentityComplete] = useState(false)
   const [identityType, setIdentityType] = useState<'human' | 'agent' | null>(null)
+  const [isLifecycleLocked, setIsLifecycleLocked] = useState(false)
   const totalSections = 3 // Hero, Identity, Lifecycle
   const lifecycleRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // When entering Lifecycle section (index 2), lock scroll for 1.5s
+    if (currentSection === 2) {
+      setIsLifecycleLocked(true)
+      const timer = setTimeout(() => {
+        setIsLifecycleLocked(false)
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [currentSection])
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -49,7 +61,7 @@ function App() {
     if (path !== "/") return
 
     let scrollAccumulator = 0 
-    const getThreshold = () => currentSection === 1 ? 800 : 400
+    const getThreshold = () => currentSection === 1 ? 400 : 400
 
     const handleWheel = (e: WheelEvent) => {
       // 1. Hero handling (Section 0)
@@ -72,6 +84,12 @@ function App() {
 
       // 3. Lifecycle handling (Section 2) - Native Scroll
       else if (currentSection === 2) {
+        // Lock scroll initially to force view of title
+        if (isLifecycleLocked) {
+          e.preventDefault()
+          return
+        }
+
         const container = document.getElementById("lifecycle-container")
         const isAtTop = container ? container.scrollTop <= 0 : true
         
@@ -111,7 +129,7 @@ function App() {
 
     window.addEventListener('wheel', handleWheel, { passive: false })
     return () => window.removeEventListener('wheel', handleWheel)
-  }, [currentSection, heroComplete, identityComplete, path])
+  }, [currentSection, heroComplete, identityComplete, path, isLifecycleLocked])
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
