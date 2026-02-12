@@ -426,7 +426,7 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0, transition: { duration: 0.3, ease: "backIn" } }}
-              className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"
+              className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pb-80"
             >
               {/* Single Line Sequence */}
               {sequenceStage >= 1 && (
@@ -466,11 +466,11 @@ export function IdentitySection({ isActive, onIdentitySelected, onAnimationCompl
       )}
       {/* Scroll Indicator */}
       <AnimatePresence>
-        {isActive && showOptions && (
+        {isActive && showOptions && viewMode === "question" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0 } }} // Instant vanish
+            exit={{ opacity: 0, transition: { duration: 0.2 } }} // Fade out on sequence start
             transition={{ delay: 1.5, duration: 0.5 }} // Delay appearance
             className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20"
           >
