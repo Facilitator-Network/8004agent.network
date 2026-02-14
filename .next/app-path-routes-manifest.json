@@ -1,0 +1,10 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/agents/page": "/agents",
+  "/arena/page": "/arena",
+  "/deploy/page": "/deploy",
+  "/docs/page": "/docs",
+  "/explorer/page": "/explorer",
+  "/page": "/"
+}
