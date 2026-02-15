@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface PixelConfettiProps {
@@ -22,8 +22,12 @@ const COLORS = [
 export function PixelConfetti({ trigger, className, direction = 'down' }: PixelConfettiProps & { direction?: 'up' | 'down' }) {
   const [isVisible, setIsVisible] = useState(false)
 
-  const particles = useMemo(() => {
-    return Array.from({ length: 400 }).map((_, i) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [particles, setParticles] = useState<any[]>([])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParticles(Array.from({ length: 400 }).map((_, i) => ({
       id: i,
       x: (Math.random() - 0.5) * 100,
       y: (Math.random() - 0.5) * 100,
@@ -34,11 +38,12 @@ export function PixelConfetti({ trigger, className, direction = 'down' }: PixelC
       rotation: Math.random() * 360,
       duration: 0.8 + Math.random() * 0.8,
       delay: Math.random() * 0.2,
-    }))
+    })))
   }, [])
 
   useEffect(() => {
     if (trigger > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true)
       const timer = setTimeout(() => {
         setIsVisible(false)

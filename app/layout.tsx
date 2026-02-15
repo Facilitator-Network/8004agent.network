@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="no-scrollbar">
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <ThemeProvider defaultTheme="light" storageKey="agent-ui-theme">
           <div className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-hidden">
              <CursorGlow />
              <Navbar />

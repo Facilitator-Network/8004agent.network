@@ -518,10 +518,21 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$
 ;
 function PixelBlast({ active, children, className, particleColor }) {
     // Generate random particle properties once
-    const particles = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>{
-        if ("TURBOPACK compile-time truthy", 1) return [];
-        //TURBOPACK unreachable
-        ;
+    // Generate particles only on client to avoid hydration mismatch
+    const [particles, setParticles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        setParticles(Array.from({
+            length: 400
+        }).map((_, i)=>({
+                id: i,
+                x: (Math.random() - 0.5) * window.innerWidth * 1.5,
+                y: Math.random() * -window.innerHeight * 0.8 - 100,
+                rotation: Math.random() * 1080 - 540,
+                scale: Math.random() * 1.2 + 0.4,
+                gravity: Math.random() * 1200 + 800,
+                delay: Math.random() * 0.15,
+                color: i % 5 === 0 ? "var(--system-green)" : i % 3 === 0 ? "var(--foreground)" : "var(--muted-foreground)"
+            })));
     }, []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("relative", className),
@@ -538,7 +549,7 @@ function PixelBlast({ active, children, className, particleColor }) {
                 children: children
             }, void 0, false, {
                 fileName: "[project]/components/ui/pixel-blast.tsx",
-                lineNumber: 33,
+                lineNumber: 37,
                 columnNumber: 7
             }, this),
             active && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -591,18 +602,18 @@ function PixelBlast({ active, children, className, particleColor }) {
                         }
                     }, p.id, false, {
                         fileName: "[project]/components/ui/pixel-blast.tsx",
-                        lineNumber: 45,
+                        lineNumber: 49,
                         columnNumber: 13
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/components/ui/pixel-blast.tsx",
-                lineNumber: 43,
+                lineNumber: 47,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/ui/pixel-blast.tsx",
-        lineNumber: 31,
+        lineNumber: 35,
         columnNumber: 5
     }, this);
 }

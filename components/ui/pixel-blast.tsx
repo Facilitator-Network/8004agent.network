@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface PixelBlastProps {
@@ -13,18 +13,24 @@ interface PixelBlastProps {
 
 export function PixelBlast({ active, children, className, particleColor }: PixelBlastProps) {
   // Generate random particle properties once
-  const particles = useMemo(() => {
-    if (typeof window === 'undefined') return []
-    return Array.from({ length: 400 }).map((_, i) => ({
-      id: i,
-      x: (Math.random() - 0.5) * window.innerWidth * 1.5, // Cover full width
-      y: (Math.random() * -window.innerHeight * 0.8) - 100, // Explode UP forcefully
-      rotation: Math.random() * 1080 - 540,
-      scale: Math.random() * 1.2 + 0.4, // Bigger variance
-      gravity: Math.random() * 1200 + 800, // Stronger gravity for punchy feel
-      delay: Math.random() * 0.15,
-      color: i % 5 === 0 ? "var(--system-green)" : (i % 3 === 0 ? "var(--foreground)" : "var(--muted-foreground)"), // Mix colors
-    }))
+  // Generate particles only on client to avoid hydration mismatch
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [particles, setParticles] = useState<any[]>([])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParticles(
+      Array.from({ length: 400 }).map((_, i) => ({
+        id: i,
+        x: (Math.random() - 0.5) * window.innerWidth * 1.5, // Cover full width
+        y: (Math.random() * -window.innerHeight * 0.8) - 100, // Explode UP forcefully
+        rotation: Math.random() * 1080 - 540,
+        scale: Math.random() * 1.2 + 0.4, // Bigger variance
+        gravity: Math.random() * 1200 + 800, // Stronger gravity for punchy feel
+        delay: Math.random() * 0.15,
+        color: i % 5 === 0 ? "var(--system-green)" : (i % 3 === 0 ? "var(--foreground)" : "var(--muted-foreground)"), // Mix colors
+      }))
+    )
   }, [])
 
   return (

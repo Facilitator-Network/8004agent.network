@@ -11,7 +11,9 @@ const nextConfig = {
 
   images: {
     unoptimized: true, // For consistent behavior with Vite's straightforward image handling initially
-  }
+  },
+  output: 'export',
+  distDir: 'dist',
 }
 
 export default nextConfig
