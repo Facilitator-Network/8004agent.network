@@ -32,7 +32,7 @@ export function Navbar() {
         {/* Left Side: Branding */}
         <div className="flex items-center gap-4 justify-start">
           <Link href="/" className="font-bold italic tracking-wider text-xl text-foreground hover:opacity-80 transition-opacity">
-            AGENET
+            8004agents
           </Link>
           <div className="h-4 w-[1px] bg-border" />
           <span className="text-[10px] text-muted-foreground font-mono tracking-widest pt-0.5 uppercase">
