@@ -1,0 +1,12 @@
+1:"$Sreact.fragment"
+2:I[17660,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"HomeLayout"]
+3:I[46331,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"HeroSection"]
+4:I[63700,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"PipelineSection"]
+5:I[14523,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"ArenaSection"]
+6:I[35296,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"NamingSection"]
+7:I[28665,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"DifferentiationSection"]
+8:I[68412,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/8a7533ab72a8e9b5.js","/_next/static/chunks/e46f55f071d6fafc.js","/_next/static/chunks/55c652edbdda3bbf.js"],"FinalCTASection"]
+9:I[97367,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/d2be314c3ece3fbe.js"],"OutletBoundary"]
+a:"$Sreact.suspense"
+0:{"buildId":"EOsyDchHPsCn78jA-T-ft","rsc":["$","$1","c",{"children":[["$","$L2",null,{"children":[["$","$L3",null,{}],["$","$L4",null,{}],["$","$L5",null,{}],["$","$L6",null,{}],["$","$L7",null,{}],["$","$L8",null,{}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/55c652edbdda3bbf.js","async":true}]],["$","$L9",null,{"children":["$","$a",null,{"name":"Next.MetadataOutlet","children":"$@b"}]}]]}],"loading":null,"isPartial":false}
+b:null

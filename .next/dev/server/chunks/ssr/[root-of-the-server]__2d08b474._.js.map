@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///Users/sarnavo/Development/FacinetLab/8004agent.network/app/deploy/page.tsx"],"sourcesContent":["export default function Page() {\n  return (\n    <div className=\"h-full w-full relative flex flex-col items-center justify-center transition-opacity duration-500\">\n      <div className=\"relative z-10\">\n        <h1 className=\"text-4xl md:text-7xl font-pixel tracking-tighter uppercase\">\n          DEPLOY\n        </h1>\n      </div>\n    </div>\n  )\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;sBACb,cAAA,8OAAC;gBAAG,WAAU;0BAA6D;;;;;;;;;;;;;;;;AAMnF"}}]
+}
