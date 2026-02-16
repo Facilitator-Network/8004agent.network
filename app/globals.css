@@ -6,13 +6,13 @@
 
 @layer base {
   :root {
-    /* Warm off-white terminal background for light mode */
-    --background: 40 10% 97%;
-    --foreground: 0 0% 3.9%;
-    --card: 40 10% 97%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 40 10% 97%;
-    --popover-foreground: 0 0% 3.9%;
+    /* LIGHT MODE: Clean Lab Console */
+    --background: 0 0% 98%;      /* Very light grey/white */
+    --foreground: 0 0% 9%;       /* Near black */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
@@ -23,9 +23,9 @@
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
+    --border: 0 0% 89.8%;        /* Visible light grey border */
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --ring: 0 0% 9%;
     --radius: 0.5rem;
     
     /* System-oriented semantic colors */
@@ -37,12 +37,12 @@
   }
 
   .dark {
-    /* Deep graphite background for dark mode */
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 10%;
+    /* DARK MODE: Deep Space Console */
+    --background: 0 0% 3%;       /* Almost pure black */
+    --foreground: 0 0% 98%;      /* Off-white */
+    --card: 0 0% 3%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 10%;
+    --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 0 0% 9%;
@@ -54,11 +54,11 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    --border: 0 0% 12%;          /* Subtle dark grey border */
+    --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
     
-    /* System-oriented semantic colors (same values for consistency) */
+    /* System-oriented semantic colors */
     --system-green: 142 76% 36%;
     --info-blue: 217 91% 60%;
     --warning-amber: 38 92% 50%;
