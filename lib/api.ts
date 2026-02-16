@@ -36,3 +36,11 @@ export async function apiCreateCircleWallet(agentId: string) {
 export async function apiStoreAgent(agentData: Record<string, unknown>) {
   return post('/api/agents', agentData)
 }
+
+export async function apiListAgents(): Promise<{ agents: Record<string, unknown>[] }> {
+  return get('/api/agents')
+}
+
+export async function apiGetAgent(network: string, agentId: string) {
+  return get(`/api/agents/${network}/${agentId}`)
+}
