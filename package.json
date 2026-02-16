@@ -18,6 +18,8 @@
     "clsx": "^2.1.1",
     "cobe": "^0.6.5",
     "eslint-config-next": "^16.1.6",
+    "ethers": "^6.16.0",
+    "facinet": "^2.4.6",
     "framer-motion": "^12.33.0",
     "geist": "^1.7.0",
     "gsap": "^3.14.2",
