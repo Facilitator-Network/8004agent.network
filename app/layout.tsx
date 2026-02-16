@@ -1,5 +1,6 @@
 import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { WalletProvider } from "@/components/wallet-provider"
 import { Navbar } from "@/components/layout/navbar"
 import { StatusBar } from "@/components/layout/status-bar"
 import { GeistSans } from "geist/font/sans"
@@ -19,13 +20,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased no-scrollbar`}>
         <ThemeProvider defaultTheme="dark" storageKey="agent-ui-theme">
-          <div className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-hidden">
-             <Navbar />
-             <main className="flex-1 relative overflow-hidden flex flex-col">
-               {children}
-             </main>
-             <StatusBar />
-          </div>
+          <WalletProvider>
+            <div className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-hidden">
+               <Navbar />
+               <main className="flex-1 relative overflow-hidden flex flex-col">
+                 {children}
+               </main>
+               <StatusBar />
+            </div>
+          </WalletProvider>
         </ThemeProvider>
       </body>
     </html>

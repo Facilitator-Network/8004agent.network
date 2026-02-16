@@ -101,7 +101,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/sarnavo/Development/FacinetLab/8004agent.network",
+    "outputFileTracingRoot": "/Users/abhishektripathi/Desktop/agentcli/8004agent.network",
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -294,11 +294,11 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.mjs",
     "turbopack": {
-      "root": "/Users/sarnavo/Development/FacinetLab/8004agent.network"
+      "root": "/Users/abhishektripathi/Desktop/agentcli/8004agent.network"
     },
     "distDirRoot": "dist"
   },
-  "appDir": "/Users/sarnavo/Development/FacinetLab/8004agent.network",
+  "appDir": "/Users/abhishektripathi/Desktop/agentcli/8004agent.network",
   "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",

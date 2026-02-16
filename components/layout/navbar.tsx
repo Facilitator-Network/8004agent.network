@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/theme-provider"
+import { useWallet } from "@/components/wallet-provider"
 import { SunDimIcon } from "@/components/ui/sun-dim-icon"
 import { MoonIcon } from "@/components/ui/moon-icon"
 
@@ -17,8 +18,13 @@ const navLinks = [
   { href: "/docs", label: "Docs" },
 ]
 
+function truncateAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
 export function Navbar() {
   const pathname = usePathname()
+  const { walletAddress, isConnecting, connect, disconnect } = useWallet()
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-8 md:px-12">
@@ -54,15 +60,30 @@ export function Navbar() {
 
         {/* Right: Actions & Theme */}
         <div className="flex items-center justify-end gap-3">
-          {/* Login Status Indicator */}
-          <div className="flex items-center gap-2 px-4 h-9 rounded-md border border-border cursor-pointer group hover:border-foreground/20 transition-colors">
+          {/* Wallet Connect Button */}
+          <button
+            onClick={walletAddress ? disconnect : connect}
+            disabled={isConnecting}
+            className="flex items-center gap-2 px-4 h-9 rounded-md border border-border cursor-pointer group hover:border-foreground/20 transition-colors disabled:opacity-50"
+          >
             <div className="relative flex items-center justify-center">
-               <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] transition-colors duration-300 group-hover:bg-system-green group-hover:shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full transition-colors duration-300",
+                  walletAddress
+                    ? "bg-system-green shadow-[0_0_8px_hsl(var(--system-green)/0.5)]"
+                    : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                )}
+              />
             </div>
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
-              LOGIN
+              {isConnecting
+                ? "CONNECTING..."
+                : walletAddress
+                  ? truncateAddress(walletAddress)
+                  : "CONNECT"}
             </span>
-          </div>
+          </button>
 
           {/* Theme Toggle */}
           <ThemeToggle />
