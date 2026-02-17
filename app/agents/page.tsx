@@ -309,7 +309,7 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
 
 // ---- Feedback Section ----
 function FeedbackSection({ agent }: { agent: Agent }) {
-  const { walletAddress } = useWallet()
+  const { walletAddress, signer } = useWallet()
   const networkConfig = CONTRACTS[agent.network]
   const [feedbacks, setFeedbacks] = useState<FeedbackEntry[]>([])
   const [summary, setSummary] = useState<{ count: number; avg: number } | null>(null)
@@ -385,16 +385,20 @@ function FeedbackSection({ agent }: { agent: Agent }) {
   }
 
   async function handleSubmit() {
-    if (!walletAddress || !agent.agentId || agent.agentId === "pending") return
+    if (!walletAddress || !signer || !agent.agentId || agent.agentId === "pending") return
     setSubmitting(true)
     setSubmitMsg(null)
 
     try {
+      // Sign feedback message to prove wallet ownership
+      const sigMessage = `I give feedback score ${score}/5 to agent #${agent.agentId} (${agent.name}) on ${networkConfig.name} via 8004agent.network`
+      const signature = await signer.signMessage(sigMessage)
+
       const facConfig = { network: networkConfig.facinetNetwork, chainId: networkConfig.chainId }
       const facilitator = await selectFacilitator(facConfig)
 
-      // Build feedbackHash from comment
-      const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(comment || "No comment"))
+      // Build feedbackHash from signature (proves user signed this specific feedback)
+      const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(signature))
 
       await facinetExecuteContract(facConfig, {
         contractAddress: networkConfig.reputationRegistry as `0x${string}`,
@@ -406,8 +410,8 @@ function FeedbackSection({ agent }: { agent: Agent }) {
           "rating",              // tag1
           comment || "",         // tag2 (store short comment here)
           agent.url || "",       // endpoint
-          "",                    // feedbackURI
-          feedbackHash,          // feedbackHash
+          `sig:${walletAddress}`,// feedbackURI — marks who signed
+          feedbackHash,          // feedbackHash — hash of user's signature
         ],
         abi: REPUTATION_REGISTRY_ABI,
       }, facilitator)
