@@ -3,8 +3,11 @@
   "/_not-found/page": "/_not-found",
   "/agents/page": "/agents",
   "/arena/page": "/arena",
+  "/dashboard/page": "/dashboard",
   "/deploy/page": "/deploy",
   "/docs/page": "/docs",
   "/explorer/page": "/explorer",
-  "/page": "/"
+  "/hire/page": "/hire",
+  "/page": "/",
+  "/workspace/page": "/workspace"
 }

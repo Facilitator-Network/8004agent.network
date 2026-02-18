@@ -1,7 +1,10 @@
 import { API_BASE } from './deploy-constants'
 
-async function post(path: string, body: Record<string, unknown>) {
-  const res = await fetch(`${API_BASE}${path}`, {
+type FetchFn = (input: RequestInfo, init?: RequestInit) => Promise<Response>
+
+async function post(path: string, body: Record<string, unknown>, fetchFn?: FetchFn | null) {
+  const doFetch = fetchFn || fetch
+  const res = await doFetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -13,8 +16,9 @@ async function post(path: string, body: Record<string, unknown>) {
   return data
 }
 
-async function get(path: string) {
-  const res = await fetch(`${API_BASE}${path}`)
+async function get(path: string, fetchFn?: FetchFn | null) {
+  const doFetch = fetchFn || fetch
+  const res = await doFetch(`${API_BASE}${path}`)
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     throw new Error(data.error || res.statusText || `HTTP ${res.status}`)
@@ -31,10 +35,6 @@ export async function apiCheckAgent(name?: string, url?: string): Promise<{ name
 
 export async function apiCreateCircleWallet(agentId: string) {
   return post('/api/circle/create-wallet', { agentId })
-}
-
-export async function apiStoreAgent(agentData: Record<string, unknown>) {
-  return post('/api/agents', agentData)
 }
 
 export async function apiListAgents(): Promise<{ agents: Record<string, unknown>[] }> {
@@ -132,28 +132,28 @@ export async function apiGetEvent(id: string): Promise<ArenaEvent> {
   return get(`/api/arena/events/${id}`)
 }
 
-export async function apiCreateEvent(data: Record<string, unknown>) {
-  return post('/api/arena/events', data)
+export async function apiCreateEvent(data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post('/api/arena/events', data, signedFetch)
 }
 
-export async function apiRegisterForEvent(eventId: string, data: Record<string, unknown>) {
-  return post(`/api/arena/events/${eventId}/register`, data)
+export async function apiRegisterForEvent(eventId: string, data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post(`/api/arena/events/${eventId}/register`, data, signedFetch)
 }
 
-export async function apiUpdateEventStatus(eventId: string, data: Record<string, unknown>) {
-  return post(`/api/arena/events/${eventId}/status`, data)
+export async function apiUpdateEventStatus(eventId: string, data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post(`/api/arena/events/${eventId}/status`, data, signedFetch)
 }
 
-export async function apiVoteEvent(eventId: string, data: Record<string, unknown>) {
-  return post(`/api/arena/events/${eventId}/vote`, data)
+export async function apiVoteEvent(eventId: string, data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post(`/api/arena/events/${eventId}/vote`, data, signedFetch)
 }
 
-export async function apiJudgeEvent(eventId: string, data: Record<string, unknown>) {
-  return post(`/api/arena/events/${eventId}/judge`, data)
+export async function apiJudgeEvent(eventId: string, data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post(`/api/arena/events/${eventId}/judge`, data, signedFetch)
 }
 
-export async function apiDistributePrizes(eventId: string, data: Record<string, unknown>) {
-  return post(`/api/arena/events/${eventId}/distribute`, data)
+export async function apiDistributePrizes(eventId: string, data: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post(`/api/arena/events/${eventId}/distribute`, data, signedFetch)
 }
 
 export async function apiCheckAdmin(address: string): Promise<{ isAdmin: boolean }> {
@@ -162,4 +162,108 @@ export async function apiCheckAdmin(address: string): Promise<{ isAdmin: boolean
 
 export async function apiGetLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[] }> {
   return get('/api/arena/leaderboard')
+}
+
+// ---- Agent Verification (ERC-8126) ----
+
+export interface VerificationProof {
+  proofType: string
+  score: number
+  details: Record<string, unknown>
+  timestamp: string
+}
+
+export interface VerificationResult {
+  agentId: string
+  network: string
+  overallScore: number
+  riskTier: string
+  proofs: VerificationProof[]
+  txHash?: string
+  verifiedAt: string
+}
+
+export async function apiVerifyAgent(network: string, agentId: string, signedFetch?: FetchFn | null): Promise<VerificationResult> {
+  return post(`/api/verify/${network}/${agentId}`, {}, signedFetch)
+}
+
+export async function apiGetVerification(network: string, agentId: string): Promise<VerificationResult | null> {
+  return get(`/api/verify/${network}/${agentId}`)
+}
+
+export async function apiStoreAgent(agentData: Record<string, unknown>, signedFetch?: FetchFn | null) {
+  return post('/api/agents', agentData, signedFetch)
+}
+
+// ---- Hired Agents ----
+
+export async function apiGetUserHires(address: string): Promise<{ hires: Record<string, unknown>[] }> {
+  return get(`/api/agents/hires/${address}`)
+}
+
+// ---- Hire System ----
+
+export interface HirePlan {
+  calls: number
+  days: number
+  price: number
+  label: string
+}
+
+export interface HireRecord {
+  hireId: string
+  network: string
+  agentId: string
+  buyerAddress: string
+  plan: string
+  callsTotal: number
+  callsUsed: number
+  daysValid: number
+  pricePaid: string
+  paymentTxHash: string
+  status: string
+  createdAt: string
+  expiresAt: string
+  agent?: Record<string, unknown>
+}
+
+export async function apiGetPlans(network: string, agentId: string): Promise<{ free: boolean; plans: Record<string, HirePlan> | null; perCallPrice?: number }> {
+  return get(`/api/hire/plans/${network}/${agentId}`)
+}
+
+export async function apiRecordHire(data: Record<string, unknown>): Promise<{ ok: boolean; hireId: string; hire: HireRecord }> {
+  return post('/api/hire', data)
+}
+
+export async function apiGetMyHires(address: string): Promise<{ hires: HireRecord[] }> {
+  return get(`/api/hire/my/${address}`)
+}
+
+export async function apiGetHireStatus(hireId: string): Promise<HireRecord> {
+  return get(`/api/hire/status/${hireId}`)
+}
+
+export async function apiCheckActiveHire(address: string, network: string, agentId: string): Promise<{ active: boolean; hire: HireRecord | null }> {
+  return get(`/api/hire/active/${address}/${network}/${agentId}`)
+}
+
+// ---- Workspace ----
+
+export interface WorkspaceMessage {
+  userMessage: string
+  agentResponse: string
+  timestamp: string
+  hasFiles: boolean
+}
+
+export async function apiWorkspaceCall(hireId: string, message: string, files?: { name: string; data: string; mimeType: string }[]): Promise<{ response: string; callsUsed: number; callsTotal: number }> {
+  return post('/api/workspace/call', { hireId, message, files })
+}
+
+export async function apiWorkspaceHistory(hireId: string): Promise<{ history: WorkspaceMessage[] }> {
+  return get(`/api/workspace/history/${hireId}`)
+}
+
+export async function apiWorkspaceClear(hireId: string): Promise<{ ok: boolean }> {
+  return post(`/api/workspace/clear/${hireId}`, {})
 }
