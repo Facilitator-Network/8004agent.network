@@ -12,6 +12,10 @@
       "static/media/Geist_Variable-s.p.92592eb2.woff2",
       "static/media/GeistMono_Variable.p.2f937313.woff2"
     ],
+    "[project]/app/dashboard/page": [
+      "static/media/Geist_Variable-s.p.92592eb2.woff2",
+      "static/media/GeistMono_Variable.p.2f937313.woff2"
+    ],
     "[project]/app/deploy/page": [
       "static/media/Geist_Variable-s.p.92592eb2.woff2",
       "static/media/GeistMono_Variable.p.2f937313.woff2"
@@ -24,7 +28,15 @@
       "static/media/Geist_Variable-s.p.92592eb2.woff2",
       "static/media/GeistMono_Variable.p.2f937313.woff2"
     ],
+    "[project]/app/hire/page": [
+      "static/media/Geist_Variable-s.p.92592eb2.woff2",
+      "static/media/GeistMono_Variable.p.2f937313.woff2"
+    ],
     "[project]/app/page": [
+      "static/media/Geist_Variable-s.p.92592eb2.woff2",
+      "static/media/GeistMono_Variable.p.2f937313.woff2"
+    ],
+    "[project]/app/workspace/page": [
       "static/media/Geist_Variable-s.p.92592eb2.woff2",
       "static/media/GeistMono_Variable.p.2f937313.woff2"
     ]

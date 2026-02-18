@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/theme-provider"
 import { useWallet } from "@/components/wallet-provider"
@@ -24,7 +25,28 @@ function truncateAddress(address: string) {
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { walletAddress, isConnecting, connect, disconnect } = useWallet()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [dropdownOpen])
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setDropdownOpen(false)
+  }, [pathname])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-8 md:px-12">
@@ -60,30 +82,69 @@ export function Navbar() {
 
         {/* Right: Actions & Theme */}
         <div className="flex items-center justify-end gap-3">
-          {/* Wallet Connect Button */}
-          <button
-            onClick={walletAddress ? disconnect : connect}
-            disabled={isConnecting}
-            className="flex items-center gap-2 px-4 h-9 rounded-md border border-border cursor-pointer group hover:border-foreground/20 transition-colors disabled:opacity-50"
-          >
-            <div className="relative flex items-center justify-center">
-              <span
-                className={cn(
-                  "h-2 w-2 rounded-full transition-colors duration-300",
-                  walletAddress
-                    ? "bg-system-green shadow-[0_0_8px_hsl(var(--system-green)/0.5)]"
-                    : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                )}
-              />
-            </div>
-            <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
-              {isConnecting
-                ? "CONNECTING..."
-                : walletAddress
-                  ? truncateAddress(walletAddress)
-                  : "CONNECT"}
-            </span>
-          </button>
+          {/* Wallet Connect Button + Dropdown */}
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={walletAddress ? () => setDropdownOpen((v) => !v) : connect}
+              disabled={isConnecting}
+              className="flex items-center gap-2 px-4 h-9 rounded-md border border-border cursor-pointer group hover:border-foreground/20 transition-colors disabled:opacity-50"
+            >
+              <div className="relative flex items-center justify-center">
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-colors duration-300",
+                    walletAddress
+                      ? "bg-system-green shadow-[0_0_8px_hsl(var(--system-green)/0.5)]"
+                      : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                  )}
+                />
+              </div>
+              <span className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                {isConnecting
+                  ? "CONNECTING..."
+                  : walletAddress
+                    ? truncateAddress(walletAddress)
+                    : "CONNECT"}
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {dropdownOpen && walletAddress && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 z-50 min-w-[180px] border border-border bg-background"
+                >
+                  <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-foreground/20" />
+                  <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-foreground/20" />
+                  <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-foreground/20" />
+                  <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-foreground/20" />
+
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false)
+                      router.push("/dashboard")
+                    }}
+                    className="w-full px-4 py-2.5 text-left font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+                  >
+                    DASHBOARD
+                  </button>
+                  <div className="h-[1px] bg-border" />
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false)
+                      disconnect()
+                    }}
+                    className="w-full px-4 py-2.5 text-left font-mono text-xs font-bold uppercase tracking-widest text-error-red/80 hover:text-error-red hover:bg-error-red/5 transition-colors"
+                  >
+                    DISCONNECT
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Theme Toggle */}
           <ThemeToggle />

@@ -53,6 +53,12 @@
       "namedRegex": "^/arena(?:/)?$"
     },
     {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
       "page": "/deploy",
       "regex": "^/deploy(?:/)?$",
       "routeKeys": {},
@@ -69,6 +75,18 @@
       "regex": "^/explorer(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/explorer(?:/)?$"
+    },
+    {
+      "page": "/hire",
+      "regex": "^/hire(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/hire(?:/)?$"
+    },
+    {
+      "page": "/workspace",
+      "regex": "^/workspace(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/workspace(?:/)?$"
     }
   ],
   "dataRoutes": [],

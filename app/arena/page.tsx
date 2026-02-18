@@ -7,8 +7,8 @@ import { CONTRACTS, USDC_ADDRESS, USDC_DECIMALS, USDC_ABI } from "@/lib/deploy-c
 import {
   apiListEvents, apiListAgents, apiCreateEvent, apiRegisterForEvent,
   apiUpdateEventStatus, apiVoteEvent, apiJudgeEvent, apiDistributePrizes,
-  apiCheckAdmin, apiGetLeaderboard, apiGetEvent,
-  type ArenaEvent, type LeaderboardEntry,
+  apiCheckAdmin, apiGetLeaderboard, apiGetEvent, apiGetVerification,
+  type ArenaEvent, type LeaderboardEntry, type VerificationResult,
 } from "@/lib/api"
 import { useWallet } from "@/components/wallet-provider"
 import { Contract } from "ethers"
@@ -911,6 +911,33 @@ function CreateEventPanel({ onCreated, onCancel }: { onCreated: () => void; onCa
   )
 }
 
+// ---- Leaderboard Verification Badge ----
+const LB_TIER_STYLES: Record<string, string> = {
+  MINIMAL: "border-green-500/60 text-green-500",
+  LOW: "border-cyan-500/60 text-cyan-500",
+  MEDIUM: "border-yellow-500/60 text-yellow-500",
+  HIGH: "border-red-400/60 text-red-400",
+  CRITICAL: "border-red-600/60 text-red-600",
+}
+
+function LeaderboardVerificationBadge({ network, agentId }: { network: string; agentId: string }) {
+  const [tier, setTier] = useState<string | null>(null)
+
+  useEffect(() => {
+    apiGetVerification(network, agentId)
+      .then((v: VerificationResult | null) => { if (v?.riskTier) setTier(v.riskTier) })
+      .catch(() => {})
+  }, [network, agentId])
+
+  if (!tier) return null
+
+  return (
+    <span className={cn("font-mono text-[7px] uppercase tracking-wider px-1 py-0.5 border shrink-0", LB_TIER_STYLES[tier] || "border-border text-muted-foreground")}>
+      {tier}
+    </span>
+  )
+}
+
 // ---- Leaderboard ----
 function Leaderboard() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
@@ -966,7 +993,10 @@ function Leaderboard() {
             {entry.rank <= 3 ? ["", "1st", "2nd", "3rd"][entry.rank] : entry.rank}
           </span>
           <div className="flex-1 min-w-0">
-            <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground block truncate">{entry.name}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground block truncate">{entry.name}</span>
+              <LeaderboardVerificationBadge network={entry.network} agentId={entry.agentId} />
+            </div>
             <span className="font-mono text-[8px] text-muted-foreground/40 uppercase tracking-wider">
               {CONTRACTS[entry.network]?.name || entry.network} · #{entry.agentId}
             </span>

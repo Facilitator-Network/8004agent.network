@@ -10,6 +10,7 @@ export const CONTRACTS: Record<string, {
   blockExplorer: string
   identityRegistry: string
   reputationRegistry: string
+  verificationRegistry: string
   facinetNetwork: string
 }> = {
   sepolia: {
@@ -20,6 +21,7 @@ export const CONTRACTS: Record<string, {
     blockExplorer: 'https://sepolia.etherscan.io',
     identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0xA4Bc25c1715c073202783699ea934b169c19b3C2',
     facinetNetwork: 'ethereum-sepolia',
   },
   baseSepolia: {
@@ -30,6 +32,7 @@ export const CONTRACTS: Record<string, {
     blockExplorer: 'https://sepolia.basescan.org',
     identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0x817FCea8d1AcdABe280A39F31feAaf635D740491',
     facinetNetwork: 'base-sepolia',
   },
   fuji: {
@@ -40,6 +43,7 @@ export const CONTRACTS: Record<string, {
     blockExplorer: 'https://testnet.snowtrace.io',
     identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0x82b50Dd0729D1b109522f6b4D9B13Aa438aF63D0',
     facinetNetwork: 'avalanche-fuji',
   },
   arbitrumSepolia: {
@@ -50,6 +54,7 @@ export const CONTRACTS: Record<string, {
     blockExplorer: 'https://sepolia.arbiscan.io',
     identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0x388166fb3B38aFa179B76444d742A329b78B4FF4',
     facinetNetwork: 'arbitrum-sepolia',
   },
   monadTestnet: {
@@ -60,6 +65,7 @@ export const CONTRACTS: Record<string, {
     blockExplorer: 'https://testnet.monadexplorer.com',
     identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0x6166809DCFaD786C0f18d8d97be3729b83cb2775',
     facinetNetwork: 'monad-testnet',
   },
 }
@@ -321,6 +327,75 @@ export const USDC_ABI = [
       { indexed: false, name: 'value', type: 'uint256' },
     ],
     name: 'Transfer',
+    type: 'event',
+  },
+]
+
+// ---- ERC-8126 Agent Verification ----
+// Address will be updated after deployment to all testnets
+// ERC-8126 addresses are per-network (see CONTRACTS above)
+// This is kept for backwards compatibility — defaults to Fuji
+export const ERC8126_ADDRESS = '0x82b50Dd0729D1b109522f6b4D9B13Aa438aF63D0'
+
+export const ERC8126_ABI = [
+  {
+    inputs: [
+      { name: 'walletAddress', type: 'address' },
+      { name: 'name', type: 'string' },
+      { name: 'agentURI', type: 'string' },
+    ],
+    name: 'registerAgent',
+    outputs: [{ name: 'agentId', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'agentId', type: 'uint256' }],
+    name: 'getAgentVerification',
+    outputs: [
+      { name: 'isVerified', type: 'bool' },
+      { name: 'overallScore', type: 'uint8' },
+      { name: 'riskTier', type: 'uint8' },
+      { name: 'verifiedAt', type: 'uint256' },
+      { name: 'proofCount', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'agentId', type: 'uint256' }],
+    name: 'getAgentInfo',
+    outputs: [
+      { name: 'walletAddress', type: 'address' },
+      { name: 'name', type: 'string' },
+      { name: 'agentURI', type: 'string' },
+      { name: 'registrant', type: 'address' },
+      { name: 'registeredAt', type: 'uint256' },
+      { name: 'exists', type: 'bool' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'agentId', type: 'uint256' },
+      { indexed: true, name: 'walletAddress', type: 'address' },
+      { indexed: true, name: 'registrantAddress', type: 'address' },
+      { indexed: false, name: 'name', type: 'string' },
+    ],
+    name: 'AgentRegistered',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'agentId', type: 'uint256' },
+      { indexed: false, name: 'overallRiskScore', type: 'uint8' },
+      { indexed: false, name: 'riskTier', type: 'uint8' },
+      { indexed: false, name: 'proofCount', type: 'uint256' },
+    ],
+    name: 'AgentVerified',
     type: 'event',
   },
 ]

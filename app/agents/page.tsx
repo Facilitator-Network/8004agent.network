@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { ethers } from "ethers"
 import { CONTRACTS, REPUTATION_REGISTRY_ABI } from "@/lib/deploy-constants"
-import { apiListAgents } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { apiListAgents, apiVerifyAgent, apiGetVerification, type VerificationResult } from "@/lib/api"
 import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
 import { useWallet } from "@/components/wallet-provider"
 
@@ -196,8 +197,39 @@ function CornerBrackets({ opacity = 20 }: { opacity?: number }) {
   )
 }
 
+// ---- Verification Badge ----
+const TIER_STYLES: Record<string, string> = {
+  MINIMAL: "border-green-500/60 text-green-500 bg-green-500/5",
+  LOW: "border-cyan-500/60 text-cyan-500 bg-cyan-500/5",
+  MEDIUM: "border-yellow-500/60 text-yellow-500 bg-yellow-500/5",
+  HIGH: "border-red-400/60 text-red-400 bg-red-400/5",
+  CRITICAL: "border-red-600/60 text-red-600 bg-red-600/10",
+}
+
+function VerificationBadge({ network, agentId }: { network: string; agentId: string }) {
+  const [verification, setVerification] = useState<VerificationResult | null>(null)
+
+  useEffect(() => {
+    if (!agentId || agentId === "pending") return
+    apiGetVerification(network, agentId)
+      .then((v) => { if (v && v.riskTier) setVerification(v) })
+      .catch(() => {})
+  }, [network, agentId])
+
+  if (!verification) return null
+
+  const style = TIER_STYLES[verification.riskTier] || "border-border text-muted-foreground"
+
+  return (
+    <span className={cn("font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border shrink-0", style)}>
+      {verification.riskTier} {verification.overallScore}
+    </span>
+  )
+}
+
 // ---- Agent Card ----
 function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
+  const router = useRouter()
   const networkName = CONTRACTS[agent.network]?.name || agent.network
   const isActive = agent.status === "active"
   const skills = Array.isArray(agent.skills) ? agent.skills : []
@@ -205,29 +237,50 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
   const date = agent.registeredAt ? new Date(agent.registeredAt).toLocaleDateString() : ""
 
   return (
-    <button type="button" onClick={onClick} className="border border-border p-5 relative text-left cursor-pointer hover:border-foreground/30 transition-colors group w-full">
+    <div className="border border-border p-5 relative hover:border-foreground/30 transition-colors group w-full">
       <CornerBrackets />
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className={cn("h-2 w-2 rounded-full shrink-0", isActive ? "bg-system-green" : "bg-error-red")} />
-        <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground truncate">{agent.name}</span>
-        {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{agent.agentId}</span>}
-      </div>
-      <div className="flex items-center gap-2 mb-3">
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/50 border border-border px-1.5 py-0.5">{networkName}</span>
-        <span className={cn("font-mono text-[9px] uppercase tracking-wider", hp > 0 ? "text-system-green" : "text-muted-foreground/40")}>{hp > 0 ? `$${hp.toFixed(2)} USDC` : "FREE"}</span>
-      </div>
-      {agent.description && <p className="font-mono text-[11px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">{agent.description}</p>}
-      {skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {skills.slice(0, 3).map((s) => <span key={s} className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60 border border-border/60 px-1.5 py-0.5">{s}</span>)}
-          {skills.length > 3 && <span className="font-mono text-[9px] text-muted-foreground/40">+{skills.length - 3}</span>}
+      {/* Clickable area for details */}
+      <button type="button" onClick={onClick} className="w-full text-left cursor-pointer">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className={cn("h-2 w-2 rounded-full shrink-0", isActive ? "bg-system-green" : "bg-error-red")} />
+          <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground truncate">{agent.name}</span>
+          {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{agent.agentId}</span>}
+          <VerificationBadge network={agent.network} agentId={agent.agentId} />
         </div>
-      )}
-      <div className="flex items-center justify-between">
-        {agent.ownerAddress && <span className="font-mono text-[9px] text-muted-foreground/40 truncate">{agent.ownerAddress.slice(0, 6)}...{agent.ownerAddress.slice(-4)}</span>}
-        {date && <span className="font-mono text-[9px] text-muted-foreground/40 shrink-0">{date}</span>}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/50 border border-border px-1.5 py-0.5">{networkName}</span>
+          <span className={cn("font-mono text-[9px] uppercase tracking-wider", hp > 0 ? "text-system-green" : "text-muted-foreground/40")}>{hp > 0 ? `$${hp.toFixed(2)} USDC` : "FREE"}</span>
+        </div>
+        {agent.description && <p className="font-mono text-[11px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">{agent.description}</p>}
+        {skills.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {skills.slice(0, 3).map((s) => <span key={s} className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60 border border-border/60 px-1.5 py-0.5">{s}</span>)}
+            {skills.length > 3 && <span className="font-mono text-[9px] text-muted-foreground/40">+{skills.length - 3}</span>}
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          {agent.ownerAddress && <span className="font-mono text-[9px] text-muted-foreground/40 truncate">{agent.ownerAddress.slice(0, 6)}...{agent.ownerAddress.slice(-4)}</span>}
+          {date && <span className="font-mono text-[9px] text-muted-foreground/40 shrink-0">{date}</span>}
+        </div>
+      </button>
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/40">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); router.push(`/hire?network=${agent.network}&agentId=${agent.agentId}`) }}
+          className="flex-1 font-mono text-[10px] uppercase tracking-widest py-1.5 border border-system-green/40 text-system-green hover:bg-system-green/5 transition-colors text-center"
+        >
+          HIRE
+        </button>
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex-1 font-mono text-[10px] uppercase tracking-widest py-1.5 border border-info-blue/40 text-info-blue hover:bg-info-blue/5 transition-colors text-center"
+        >
+          FEEDBACK
+        </button>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -243,11 +296,13 @@ function DetailRow({ label, value, children }: { label: string; value?: string; 
 
 // ---- Agent Detail ----
 function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
+  const router = useRouter()
   const networkConfig = CONTRACTS[agent.network]
   const networkName = networkConfig?.name || agent.network
   const blockExplorer = networkConfig?.blockExplorer || ""
   const isActive = agent.status === "active"
   const date = agent.registeredAt ? new Date(agent.registeredAt).toLocaleString() : ""
+  const hp = parseFloat(agent.hirePrice || "0")
 
   return (
     <div className="flex flex-col gap-5">
@@ -258,6 +313,22 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
         <span className={cn("h-3 w-3 rounded-full", isActive ? "bg-system-green" : "bg-error-red")} />
         <h2 className="font-mono text-2xl md:text-3xl font-bold tracking-tight uppercase text-foreground">{agent.name}</h2>
         {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-sm text-muted-foreground/60">#{agent.agentId}</span>}
+      </div>
+
+      {/* Hire + Feedback action bar */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push(`/hire?network=${agent.network}&agentId=${agent.agentId}`)}
+          className="font-mono text-xs uppercase tracking-widest px-6 py-2.5 bg-system-green/10 border border-system-green/40 text-system-green hover:bg-system-green/20 transition-colors"
+        >
+          {hp > 0 ? `HIRE — $${hp.toFixed(2)} / call` : "HIRE — FREE"}
+        </button>
+        <a
+          href="#feedback"
+          className="font-mono text-xs uppercase tracking-widest px-6 py-2.5 border border-info-blue/40 text-info-blue hover:bg-info-blue/5 transition-colors"
+        >
+          GIVE FEEDBACK
+        </a>
       </div>
 
       {/* Basic Info */}
@@ -301,8 +372,13 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
         </div>
       )}
 
+      {/* ERC-8126 Verification */}
+      <VerificationSection agent={agent} />
+
       {/* Feedback / Reputation */}
-      <FeedbackSection agent={agent} />
+      <div id="feedback">
+        <FeedbackSection agent={agent} />
+      </div>
     </div>
   )
 }
@@ -576,6 +652,135 @@ function FeedbackSection({ agent }: { agent: Agent }) {
         <div className="border border-border p-5 relative text-center">
           <CornerBrackets />
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/40">No feedback yet — be the first to review this agent</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- Verification Section (ERC-8126) ----
+const PROOF_TYPE_LABELS: Record<string, string> = {
+  WAV: "Web Availability",
+  WV: "Wallet Verification",
+  ETV: "On-Chain Transaction",
+}
+
+function ScoreBar({ score, label }: { score: number; label: string }) {
+  const color = score >= 70 ? "bg-green-500" : score >= 40 ? "bg-yellow-500" : "bg-red-500"
+  return (
+    <div className="flex items-center gap-3">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 w-32 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-muted-foreground/10 relative overflow-hidden">
+        <div className={cn("h-full transition-all duration-500", color)} style={{ width: `${score}%` }} />
+      </div>
+      <span className="font-mono text-xs text-foreground w-10 text-right">{score}</span>
+    </div>
+  )
+}
+
+function VerificationSection({ agent }: { agent: Agent }) {
+  const { signedFetch } = useWallet()
+  const [verification, setVerification] = useState<VerificationResult | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!agent.agentId || agent.agentId === "pending") {
+      setLoading(false)
+      return
+    }
+    apiGetVerification(agent.network, agent.agentId)
+      .then((v) => { if (v && v.riskTier) setVerification(v) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [agent.network, agent.agentId])
+
+  async function handleVerify() {
+    setVerifying(true)
+    setVerifyError(null)
+    try {
+      const result = await apiVerifyAgent(agent.network, agent.agentId, signedFetch)
+      setVerification(result)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setVerifyError(msg)
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  return (
+    <div className="border border-border p-5 relative">
+      <CornerBrackets />
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">ERC-8126 Verification</span>
+        <button
+          onClick={handleVerify}
+          disabled={verifying || !agent.agentId || agent.agentId === "pending"}
+          className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1.5 hover:border-foreground/30 hover:text-foreground transition-colors text-muted-foreground disabled:opacity-30"
+        >
+          {verifying ? "Verifying..." : verification ? "Re-verify" : "Verify Now"}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="h-20 bg-muted-foreground/5 animate-pulse" />
+      ) : verification ? (
+        <div className="space-y-4">
+          {/* Overall Score + Tier */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="border border-border p-4 text-center">
+              <span className="font-mono text-2xl font-bold text-foreground block">{verification.overallScore}</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60">Score /100</span>
+            </div>
+            <div className="border border-border p-4 text-center">
+              <span className={cn(
+                "font-mono text-sm font-bold block px-2 py-1 border",
+                TIER_STYLES[verification.riskTier] || "border-border text-muted-foreground"
+              )}>
+                {verification.riskTier}
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-1 block">Risk Tier</span>
+            </div>
+            <div className="border border-border p-4 text-center">
+              <span className="font-mono text-sm text-foreground block">
+                {verification.verifiedAt ? new Date(verification.verifiedAt).toLocaleDateString() : "—"}
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-1 block">Last Verified</span>
+            </div>
+          </div>
+
+          {/* Individual Proof Scores */}
+          {verification.proofs && verification.proofs.length > 0 && (
+            <div className="space-y-3">
+              {verification.proofs.map((proof, i) => (
+                <ScoreBar
+                  key={i}
+                  score={proof.score}
+                  label={PROOF_TYPE_LABELS[proof.proofType] || proof.proofType}
+                />
+              ))}
+            </div>
+          )}
+
+          {verification.txHash && (
+            <div className="font-mono text-[10px] text-muted-foreground/40">
+              On-chain tx: <span className="text-info-blue">{verification.txHash}</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-4">
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/40">
+            Not yet verified — click &quot;Verify Now&quot; to run ERC-8126 checks
+          </span>
+        </div>
+      )}
+
+      {verifyError && (
+        <div className="mt-3 border border-error-red/40 bg-error-red/5 px-4 py-2">
+          <span className="font-mono text-xs text-error-red">{verifyError}</span>
         </div>
       )}
     </div>
