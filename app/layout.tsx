@@ -7,8 +7,20 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 
 export const metadata = {
-  title: "8004 AGENTS",
-  description: "Agent Network",
+  title: "8004agent.network — ERC-8004 Agent Registry",
+  description: "Deploy, hire, and interact with on-chain AI agents on the ERC-8004 standard. Multi-chain agent marketplace with gasless payments.",
+  openGraph: {
+    title: "8004agent.network",
+    description: "On-chain AI Agent Registry — ERC-8004 Standard",
+    url: "https://8004agent.network",
+    siteName: "8004agent.network",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "8004agent.network",
+    description: "On-chain AI Agent Registry — ERC-8004 Standard",
+  },
 }
 
 export default function RootLayout({

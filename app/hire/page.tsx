@@ -4,10 +4,11 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
-import { ethers } from "ethers"
-import { CONTRACTS, USDC_ADDRESS, USDC_DECIMALS, USDC_ABI, PAYMENT_NETWORK_KEY } from "@/lib/deploy-constants"
-import { apiGetAgent, apiGetPlans, apiRecordHire, apiCheckActiveHire, type HirePlan } from "@/lib/api"
+import { CONTRACTS, CHAIN_USDC, PAYMENT_CHAINS, USDC_DECIMALS, USDC_ABI } from "@/lib/deploy-constants"
+import { apiGetAgent, apiGetPlans, apiRecordHire, apiCheckActiveHire, apiBridgeInitiate, type HirePlan } from "@/lib/api"
+import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
 import { useWallet } from "@/components/wallet-provider"
+import { ethers } from "ethers"
 
 // ---- Types ----
 interface Agent {
@@ -55,7 +56,7 @@ function CornerBrackets({ opacity = 20 }: { opacity?: number }) {
 function HireInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { walletAddress, signer, chainId, isConnecting, connect } = useWallet()
+  const { walletAddress, isConnecting, connect } = useWallet()
 
   const network = searchParams.get("network") || ""
   const agentId = searchParams.get("agentId") || ""
@@ -63,8 +64,10 @@ function HireInner() {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [plans, setPlans] = useState<Record<string, HirePlan> | null>(null)
   const [perCallPrice, setPerCallPrice] = useState(0)
+  const [relayerAddress, setRelayerAddress] = useState("")
   const [isFree, setIsFree] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [selectedChain, setSelectedChain] = useState("fuji")
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
   const [payStatus, setPayStatus] = useState<string | null>(null)
@@ -87,6 +90,9 @@ function HireInner() {
           setPlans(planData.plans)
           setPerCallPrice(planData.perCallPrice || 0)
           setSelectedPlan("single")
+          if (planData.relayerAddress) {
+            setRelayerAddress(planData.relayerAddress)
+          }
         }
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load agent")
@@ -109,52 +115,67 @@ function HireInner() {
       .catch(() => {})
   }, [walletAddress, network, agentId])
 
-  // Payment handler
+  // Gasless x402 payment handler
   async function handlePay() {
-    if (!walletAddress || !signer || !agent || !selectedPlan || !plans) return
+    if (!walletAddress || !agent || !selectedPlan || !plans) return
 
     const plan = plans[selectedPlan]
     if (!plan) return
 
     setPaying(true)
-    setPayStatus("Preparing payment...")
+    setPayStatus("Preparing gasless payment...")
     setError(null)
 
     try {
-      const paymentNetwork = CONTRACTS[PAYMENT_NETWORK_KEY]
-      if (chainId !== paymentNetwork.chainId) {
-        setPayStatus("Switching to Avalanche Fuji...")
-        try {
-          await window.ethereum?.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: paymentNetwork.chainIdHex }],
-          })
-        } catch {
-          throw new Error("Please switch to Avalanche Fuji network in your wallet")
-        }
-        await new Promise((r) => setTimeout(r, 2000))
-      }
+      const chainConfig = CONTRACTS[selectedChain]
+      if (!chainConfig) throw new Error(`Unknown chain: ${selectedChain}`)
 
-      const provider = new ethers.BrowserProvider(window.ethereum!)
-      const freshSigner = await provider.getSigner()
+      const usdcAddress = CHAIN_USDC[selectedChain]
+      if (!usdcAddress) throw new Error(`No USDC address for chain: ${selectedChain}`)
 
-      const amount = ethers.parseUnits(plan.price.toString(), USDC_DECIMALS)
-      const recipientAddress = agent.agentWalletAddress
+      const recipientAddress = selectedChain === "fuji"
+        ? agent.agentWalletAddress
+        : relayerAddress
 
       if (!recipientAddress) {
-        throw new Error("Agent has no wallet address configured")
+        throw new Error(selectedChain === "fuji"
+          ? "Agent has no wallet address configured"
+          : "Relayer address not available for bridging")
       }
 
-      setPayStatus(`Sending $${plan.price.toFixed(2)} USDC...`)
+      const amount = ethers.parseUnits(plan.price.toString(), USDC_DECIMALS)
 
-      const usdc = new ethers.Contract(USDC_ADDRESS, USDC_ABI, freshSigner)
-      const tx = await usdc.transfer(recipientAddress, amount)
+      setPayStatus(`Selecting facilitator on ${chainConfig.name}...`)
+      const facConfig = { network: chainConfig.facinetNetwork, chainId: chainConfig.chainId }
+      const facilitator = await selectFacilitator(facConfig)
 
-      setPayStatus("Waiting for confirmation...")
-      const receipt = await tx.wait()
+      setPayStatus(`Sending $${plan.price.toFixed(2)} USDC via x402 (gas-free)...`)
+      const result = await facinetExecuteContract(facConfig, {
+        contractAddress: usdcAddress as `0x${string}`,
+        functionName: "transfer",
+        functionArgs: [recipientAddress, amount.toString()],
+        abi: USDC_ABI,
+      }, facilitator)
 
-      if (!receipt || receipt.status !== 1) {
-        throw new Error("Transaction failed")
+      const txHash = result.txHash
+
+      // If non-Fuji chain, initiate CCTP bridge to settle on Avalanche Fuji
+      let bridgeId = ""
+      if (selectedChain !== "fuji" && txHash) {
+        setPayStatus("Initiating CCTP bridge to Avalanche Fuji...")
+        try {
+          const bridgeResult = await apiBridgeInitiate({
+            sourceChain: selectedChain,
+            paymentTxHash: txHash,
+            amount: plan.price.toString(),
+            finalRecipient: agent.agentWalletAddress,
+            purpose: "hire",
+          })
+          bridgeId = bridgeResult.bridgeId
+        } catch (bridgeErr) {
+          console.error("Bridge initiation failed:", bridgeErr)
+          // Don't block hire — bridge runs async, payment already confirmed
+        }
       }
 
       setPayStatus("Recording hire...")
@@ -163,10 +184,12 @@ function HireInner() {
         agentId,
         buyerAddress: walletAddress,
         plan: selectedPlan,
-        paymentTxHash: tx.hash,
+        paymentTxHash: txHash,
         callsTotal: plan.calls,
         daysValid: plan.days,
         pricePaid: plan.price.toString(),
+        paymentChain: selectedChain,
+        bridgeId,
       })
 
       setPayStatus("Success! Redirecting to workspace...")
@@ -200,6 +223,7 @@ function HireInner() {
         callsTotal: 999999,
         daysValid: 365,
         pricePaid: "0",
+        paymentChain: "fuji",
       })
 
       router.push(`/workspace?network=${network}&agentId=${agentId}&hireId=${hireResult.hireId}`)
@@ -273,7 +297,7 @@ function HireInner() {
               HIRE AGENT
             </h1>
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-8">
-              Select a plan and pay with USDC
+              Select a plan and pay with USDC (gas-free via x402)
             </p>
           </motion.div>
 
@@ -379,6 +403,46 @@ function HireInner() {
                 </div>
               </motion.div>
 
+              {/* Chain Selector */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="font-mono text-sm font-bold uppercase tracking-widest text-foreground">Pay On</span>
+                  <div className="flex-1 h-[1px] bg-border" />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                  {PAYMENT_CHAINS.map((chain) => {
+                    const isSelected = selectedChain === chain.key
+                    return (
+                      <button
+                        key={chain.key}
+                        onClick={() => setSelectedChain(chain.key)}
+                        className={cn(
+                          "border p-3 relative text-left transition-colors",
+                          isSelected
+                            ? "border-foreground bg-foreground/5"
+                            : "border-border hover:border-foreground/30"
+                        )}
+                      >
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-foreground block">
+                          {chain.label}
+                        </span>
+                        {chain.cctp && (
+                          <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground/50 mt-1 block">
+                            CCTP Bridge to Fuji
+                          </span>
+                        )}
+                        {!chain.cctp && (
+                          <span className="font-mono text-[8px] uppercase tracking-wider text-system-green/60 mt-1 block">
+                            Direct Payment
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+
               {/* Payment */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
                 <div className="border border-border p-5 relative">
@@ -421,7 +485,7 @@ function HireInner() {
                 </div>
 
                 <p className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-widest mt-3 text-center">
-                  Payment in USDC on Avalanche Fuji testnet
+                  Gas-free x402 payment via Facinet{selectedChain !== "fuji" ? " \u2014 CCTP bridge settles on Avalanche Fuji" : ""}
                 </p>
               </motion.div>
             </>
