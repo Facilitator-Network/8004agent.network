@@ -1,5 +1,5 @@
 // ---- Backend API ----
-export const API_BASE = 'https://agent-cli-backend.onrender.com'
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'https://agent-cli-backend.onrender.com'
 
 // ---- Per-chain contracts (official ERC-8004) ----
 export const CONTRACTS: Record<string, {
@@ -300,6 +300,23 @@ export const DEFAULT_FORM_DATA: DeployFormData = {
 export const USDC_ADDRESS = '0x5425890298aed601595a70AB815c96711a31Bc65'
 export const USDC_DECIMALS = 6
 export const PAYMENT_NETWORK_KEY = 'fuji'
+
+// ---- Per-chain USDC addresses (all 5 testnets) ----
+export const CHAIN_USDC: Record<string, string> = {
+  sepolia: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+  baseSepolia: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+  fuji: '0x5425890298aed601595a70AB815c96711a31Bc65',
+  arbitrumSepolia: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
+  monadTestnet: '0x534b2f3A21130d7a60830c2Df862319e593943A3',
+}
+
+// ---- Payment chains available for hire (CCTP-supported + direct Fuji) ----
+export const PAYMENT_CHAINS: { key: string; label: string; cctp: boolean }[] = [
+  { key: 'fuji', label: 'Avalanche Fuji (Direct)', cctp: false },
+  { key: 'sepolia', label: 'Ethereum Sepolia', cctp: true },
+  { key: 'baseSepolia', label: 'Base Sepolia', cctp: true },
+  { key: 'arbitrumSepolia', label: 'Arbitrum Sepolia', cctp: true },
+]
 
 export const USDC_ABI = [
   {

@@ -21,6 +21,8 @@ import {
   apiCheckAgent,
   apiCreateCircleWallet,
   apiStoreAgent,
+  apiVerifyAgent,
+  type VerificationResult,
 } from "@/lib/api"
 
 const STEPS = [
@@ -308,6 +310,79 @@ function StepBasicInfo({ form, updateForm, nameTaken, setNameTaken, urlTaken, se
 }
 
 // ---- Step 1: Endpoints ----
+function EndpointStatus({ url, protocol }: { url: string; protocol: "MCP" | "A2A" }) {
+  const [status, setStatus] = useState<"idle" | "checking" | "ok" | "partial" | "error">("idle")
+  const [detail, setDetail] = useState("")
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (!url || !url.startsWith("http")) {
+      setStatus("idle")
+      setDetail("")
+      return
+    }
+
+    setStatus("checking")
+    timerRef.current = setTimeout(async () => {
+      try {
+        const payload = protocol === "A2A"
+          ? { jsonrpc: "2.0", method: "agent/info", id: 1 }
+          : { jsonrpc: "2.0", method: "tools/list", id: 1 }
+
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 5000)
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+
+        if (res.ok) {
+          try {
+            const body = await res.json()
+            if (body.result !== undefined || body.jsonrpc || body.error) {
+              setStatus("ok")
+              setDetail(`Responding to ${protocol} protocol`)
+            } else {
+              setStatus("partial")
+              setDetail("Reachable but not responding to protocol")
+            }
+          } catch {
+            setStatus("partial")
+            setDetail("Reachable but response is not JSON")
+          }
+        } else {
+          setStatus("partial")
+          setDetail(`Reachable (HTTP ${res.status}) but not 2xx`)
+        }
+      } catch {
+        setStatus("error")
+        setDetail("Unreachable or CORS blocked")
+      }
+    }, 1500)
+
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [url, protocol])
+
+  if (status === "idle") return null
+
+  const color = status === "ok" ? "text-system-green" : status === "partial" ? "text-warning-amber" : status === "checking" ? "text-muted-foreground/50" : "text-error-red"
+  const dot = status === "ok" ? "bg-system-green" : status === "partial" ? "bg-warning-amber" : status === "checking" ? "bg-muted-foreground/30 animate-pulse" : "bg-error-red"
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <span className={cn("h-2 w-2 rounded-full shrink-0", dot)} />
+      <span className={cn("font-mono text-[9px] uppercase tracking-wider", color)}>
+        {status === "checking" ? "Checking..." : detail}
+      </span>
+    </div>
+  )
+}
+
 function StepEndpoints({ form, updateForm }: { form: DeployFormData; updateForm: (u: Partial<DeployFormData>) => void }) {
   return (
     <div className="flex flex-col gap-5">
@@ -317,11 +392,19 @@ function StepEndpoints({ form, updateForm }: { form: DeployFormData; updateForm:
       <div>
         <FieldLabel>MCP Endpoint URL</FieldLabel>
         <TextInput value={form.mcpEndpoint} onChange={v => updateForm({ mcpEndpoint: v })} placeholder="https://my-agent.com/mcp" />
+        <EndpointStatus url={form.mcpEndpoint} protocol="MCP" />
       </div>
 
       <div>
         <FieldLabel>A2A Endpoint URL</FieldLabel>
         <TextInput value={form.a2aEndpoint} onChange={v => updateForm({ a2aEndpoint: v })} placeholder="https://my-agent.com/a2a" />
+        <EndpointStatus url={form.a2aEndpoint} protocol="A2A" />
+      </div>
+
+      <div className="border border-border/40 px-3 py-2">
+        <span className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-wider">
+          Validation is advisory only and does not block deployment
+        </span>
       </div>
     </div>
   )
@@ -836,9 +919,37 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
 
 // ---- Step 6: Success ----
 function StepSuccess({ result, error, form }: { result: DeployResult | null; error: string | null; form: DeployFormData }) {
+  const { signedFetch } = useWallet()
+  const [verifying, setVerifying] = useState(false)
+  const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
+
   if (!result) return null
 
   const hasSuccess = result.networkResults.some(r => r.registrationTx !== null)
+  const firstSuccess = result.networkResults.find(r => r.registrationTx !== null)
+
+  async function handleVerify() {
+    if (!firstSuccess?.agentId) return
+    setVerifying(true)
+    setVerifyError(null)
+    try {
+      const vr = await apiVerifyAgent(firstSuccess.network, firstSuccess.agentId, signedFetch)
+      setVerifyResult(vr)
+    } catch (e: unknown) {
+      setVerifyError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const TIER_COLORS: Record<string, string> = {
+    MINIMAL: "text-green-500 border-green-500/60",
+    LOW: "text-cyan-500 border-cyan-500/60",
+    MEDIUM: "text-yellow-500 border-yellow-500/60",
+    HIGH: "text-red-400 border-red-400/60",
+    CRITICAL: "text-red-600 border-red-600/60",
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -927,7 +1038,39 @@ function StepSuccess({ result, error, form }: { result: DeployResult | null; err
         </div>
       )}
 
-      <div className="flex justify-center pt-4">
+      {/* Verification result inline */}
+      {verifyResult && (
+        <div className="border border-border p-4">
+          <div className="flex items-center gap-3">
+            <span className={cn(
+              "font-mono text-sm font-bold px-3 py-1 border",
+              TIER_COLORS[verifyResult.riskTier] || "text-muted-foreground border-border"
+            )}>
+              {verifyResult.overallScore >= 80 ? "\u2713 VERIFIED" : verifyResult.overallScore >= 60 ? "VERIFIED" : verifyResult.overallScore >= 40 ? "PARTIAL" : verifyResult.overallScore >= 20 ? "LOW" : "RISK"} {verifyResult.overallScore}
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
+              ERC-8126 Verification — {verifyResult.riskTier} Risk
+            </span>
+          </div>
+        </div>
+      )}
+
+      {verifyError && (
+        <div className="border border-error-red/40 bg-error-red/5 px-4 py-2">
+          <span className="font-mono text-xs text-error-red">{verifyError}</span>
+        </div>
+      )}
+
+      <div className="flex justify-center gap-4 pt-4">
+        {hasSuccess && firstSuccess?.agentId && !verifyResult && (
+          <button
+            onClick={handleVerify}
+            disabled={verifying}
+            className="font-mono text-xs uppercase tracking-widest border border-system-green/40 text-system-green px-8 py-3 hover:bg-system-green/5 transition-colors disabled:opacity-40"
+          >
+            {verifying ? "VERIFYING..." : "VERIFY THIS AGENT"}
+          </button>
+        )}
         <button
           onClick={() => window.location.reload()}
           className="font-mono text-xs uppercase tracking-widest bg-foreground text-background px-8 py-3 hover:opacity-90 transition-opacity"
