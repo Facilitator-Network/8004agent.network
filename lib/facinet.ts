@@ -3,7 +3,7 @@
 // cannot resolve as ESM. Instead of fighting the bundler, we call the same
 // REST endpoints the SDK uses internally.
 
-const FACINET_API = 'https://facinet.vercel.app'
+const FACINET_API = process.env.NEXT_PUBLIC_FACINET_API || 'https://facinet.vercel.app'
 
 interface Facilitator {
   id: string
