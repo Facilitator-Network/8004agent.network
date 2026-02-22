@@ -195,12 +195,6 @@ export async function apiStoreAgent(agentData: Record<string, unknown>, signedFe
   return post('/api/agents', agentData, signedFetch)
 }
 
-// ---- Hired Agents ----
-
-export async function apiGetUserHires(address: string): Promise<{ hires: Record<string, unknown>[] }> {
-  return get(`/api/agents/hires/${address}`)
-}
-
 // ---- Hire System ----
 
 export interface HirePlan {
@@ -227,8 +221,18 @@ export interface HireRecord {
   agent?: Record<string, unknown>
 }
 
-export async function apiGetPlans(network: string, agentId: string): Promise<{ free: boolean; plans: Record<string, HirePlan> | null; perCallPrice?: number }> {
+export async function apiGetPlans(network: string, agentId: string): Promise<{ free: boolean; plans: Record<string, HirePlan> | null; perCallPrice?: number; relayerAddress?: string }> {
   return get(`/api/hire/plans/${network}/${agentId}`)
+}
+
+export async function apiBridgeInitiate(data: {
+  sourceChain: string
+  paymentTxHash: string
+  amount: string
+  finalRecipient: string
+  purpose: string
+}): Promise<{ bridgeId: string; status: string }> {
+  return post('/api/bridge/initiate', data)
 }
 
 export async function apiRecordHire(data: Record<string, unknown>): Promise<{ ok: boolean; hireId: string; hire: HireRecord }> {
@@ -266,4 +270,23 @@ export async function apiWorkspaceHistory(hireId: string): Promise<{ history: Wo
 
 export async function apiWorkspaceClear(hireId: string): Promise<{ ok: boolean }> {
   return post(`/api/workspace/clear/${hireId}`, {})
+}
+
+// ---- Withdraw (Circle wallet → owner wallet) ----
+
+export async function apiWithdraw(data: {
+  agentId: string
+  network: string
+  toAddress: string
+  amount: string
+  ownerAddress: string
+  usdcAddress: string
+  message?: string
+  signature?: string
+}, signedFetch?: FetchFn | null): Promise<{ ok: boolean; circleTxId?: string; txHash?: string }> {
+  return post('/api/circle/withdraw', data, signedFetch)
+}
+
+export async function apiWithdrawStatus(circleTxId: string): Promise<{ status: string; txHash?: string | null }> {
+  return get(`/api/circle/withdraw-status/${circleTxId}`)
 }

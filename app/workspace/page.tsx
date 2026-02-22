@@ -13,7 +13,9 @@ import {
   apiWorkspaceClear,
   type HireRecord,
 } from "@/lib/api"
-import { CONTRACTS } from "@/lib/deploy-constants"
+import { CONTRACTS, REPUTATION_REGISTRY_ABI } from "@/lib/deploy-constants"
+import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
+import { ethers } from "ethers"
 import { useWallet } from "@/components/wallet-provider"
 
 // ---- Types ----
@@ -381,19 +383,22 @@ function WorkspaceInner() {
         </div>
       </div>
 
-      {/* Status banner */}
+      {/* Status banner + Feedback */}
       {(isExpired || isExhausted) && (
         <div className="border-b border-error-red/30 bg-error-red/5 px-4 py-2 flex-shrink-0">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <span className="font-mono text-xs uppercase tracking-wider text-error-red">
-              {isExpired ? "Hire expired" : "No calls remaining"}
-            </span>
-            <button
-              onClick={() => router.push(`/hire?network=${network}&agentId=${agentId}`)}
-              className="font-mono text-[9px] uppercase tracking-widest px-3 py-1 bg-error-red/10 border border-error-red/30 text-error-red hover:bg-error-red/20 transition-colors"
-            >
-              RENEW
-            </button>
+          <div className="max-w-4xl mx-auto space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs uppercase tracking-wider text-error-red">
+                {isExpired ? "Hire expired" : "No calls remaining"}
+              </span>
+              <button
+                onClick={() => router.push(`/hire?network=${network}&agentId=${agentId}`)}
+                className="font-mono text-[9px] uppercase tracking-widest px-3 py-1 bg-error-red/10 border border-error-red/30 text-error-red hover:bg-error-red/20 transition-colors"
+              >
+                RENEW
+              </button>
+            </div>
+            <FeedbackForm agent={agent} network={network} agentId={agentId} />
           </div>
         </div>
       )}
@@ -569,6 +574,142 @@ function WorkspaceInner() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ---- Feedback Form (shown after hire usage complete) ----
+function FeedbackForm({ agent, network, agentId }: { agent: Agent | null; network: string; agentId: string }) {
+  const { walletAddress, signer } = useWallet()
+  const [score, setScore] = useState(5)
+  const [comment, setComment] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const [alreadyGave, setAlreadyGave] = useState(false)
+
+  const networkConfig = CONTRACTS[network]
+
+  // Check if user already gave feedback
+  useEffect(() => {
+    if (!walletAddress || !agentId || !networkConfig) return
+    async function check() {
+      try {
+        const provider = new ethers.JsonRpcProvider(networkConfig.rpc)
+        const contract = new ethers.Contract(networkConfig.reputationRegistry, REPUTATION_REGISTRY_ABI, provider)
+        const lastIndex = Number(await contract.getLastIndex(agentId, walletAddress))
+        if (lastIndex > 0) setAlreadyGave(true)
+      } catch { /* ignore */ }
+    }
+    check()
+  }, [walletAddress, agentId, networkConfig])
+
+  async function handleSubmit() {
+    if (!walletAddress || !signer || !agentId || !networkConfig) return
+    setSubmitting(true)
+    setFeedbackError(null)
+
+    try {
+      const sigMessage = `I give feedback score ${score}/5 to agent #${agentId} (${agent?.name || "agent"}) on ${networkConfig.name} via 8004agent.network`
+      const signature = await signer.signMessage(sigMessage)
+
+      const facConfig = { network: networkConfig.facinetNetwork, chainId: networkConfig.chainId }
+      const facilitator = await selectFacilitator(facConfig)
+      const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(signature))
+
+      await facinetExecuteContract(facConfig, {
+        contractAddress: networkConfig.reputationRegistry as `0x${string}`,
+        functionName: "giveFeedback",
+        functionArgs: [
+          agentId,
+          score,
+          0,
+          "rating",
+          comment || "",
+          agent?.url || "",
+          `sig:${walletAddress}`,
+          feedbackHash,
+        ],
+        abi: REPUTATION_REGISTRY_ABI,
+      }, facilitator)
+
+      setSubmitted(true)
+    } catch (e: unknown) {
+      setFeedbackError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="border border-system-green/30 bg-system-green/5 p-4">
+        <span className="font-mono text-xs uppercase tracking-wider text-system-green">
+          Thank you for your feedback! It has been recorded on-chain.
+        </span>
+      </div>
+    )
+  }
+
+  if (alreadyGave) {
+    return (
+      <div className="border border-border/60 p-4 text-center">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+          You have already submitted feedback for this agent
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-border p-4 relative">
+      <CornerBrackets opacity={10} />
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-3">
+        How was your experience with {agent?.name || "this agent"}?
+      </span>
+
+      <div className="flex items-center gap-2 mb-3">
+        {[1, 2, 3, 4, 5].map((v) => (
+          <button
+            key={v}
+            onClick={() => setScore(v)}
+            className={cn(
+              "w-9 h-9 font-mono text-sm font-bold border transition-colors",
+              v === score
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+            )}
+          >
+            {v}
+          </button>
+        ))}
+        <span className="font-mono text-[9px] text-muted-foreground/40 ml-2">/5</span>
+      </div>
+
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Optional comment..."
+        rows={2}
+        className="w-full bg-transparent border border-border px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-foreground/40 transition-colors resize-none no-scrollbar mb-3"
+      />
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="font-mono text-[10px] uppercase tracking-widest bg-foreground text-background px-5 py-2 hover:opacity-90 disabled:opacity-30"
+        >
+          {submitting ? "Submitting..." : "Submit Feedback"}
+        </button>
+        <span className="font-mono text-[8px] text-muted-foreground/40 uppercase tracking-wider">Gas covered by Facinet</span>
+      </div>
+
+      {feedbackError && (
+        <div className="mt-2 border border-error-red/30 bg-error-red/5 px-3 py-1.5">
+          <span className="font-mono text-[10px] text-error-red">{feedbackError}</span>
+        </div>
+      )}
     </div>
   )
 }

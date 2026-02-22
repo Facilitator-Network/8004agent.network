@@ -9,11 +9,17 @@ import {
   apiListEvents,
   apiGetLeaderboard,
   apiGetVerification,
-  apiGetUserHires,
+  apiVerifyAgent,
+  apiGetMyHires,
+  apiWithdraw,
+  apiWithdrawStatus,
   type ArenaEvent,
   type LeaderboardEntry,
   type VerificationResult,
+  type HireRecord,
 } from "@/lib/api"
+import { USDC_ADDRESS } from "@/lib/deploy-constants"
+import { useRouter } from "next/navigation"
 import {
   fetchAgentUsdcBalance,
   fetchAgentReputation,
@@ -49,9 +55,13 @@ interface Agent {
   circleWalletId: string
 }
 
-interface HiredAgent extends Agent {
-  paymentAmount: number
-  paymentTxHash: string
+interface DashboardHire extends HireRecord {
+  agent?: {
+    name: string
+    description: string
+    status: string
+    [key: string]: unknown
+  }
 }
 
 // ---- Unique agents: group by name across networks ----
@@ -83,6 +93,14 @@ function truncAddr(address: string) {
 }
 
 // ---- Tier Styles ----
+function verificationLabel(score: number): string {
+  if (score >= 80) return `\u2713 VERIFIED ${score}`
+  if (score >= 60) return `VERIFIED ${score}`
+  if (score >= 40) return `PARTIAL ${score}`
+  if (score >= 20) return `LOW ${score}`
+  return `RISK ${score}`
+}
+
 const TIER_STYLES: Record<string, string> = {
   MINIMAL: "border-green-500/60 text-green-500 bg-green-500/5",
   LOW: "border-cyan-500/60 text-cyan-500 bg-cyan-500/5",
@@ -101,13 +119,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ---- Main Page ----
 export default function DashboardPage() {
-  const { walletAddress, isConnecting, connect } = useWallet()
+  const { walletAddress, isConnecting, connect, signedFetch } = useWallet()
 
   // Data states
   const [myAgents, setMyAgents] = useState<Agent[]>([])
   const [allEvents, setAllEvents] = useState<ArenaEvent[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [hiredAgents, setHiredAgents] = useState<HiredAgent[]>([])
+  const [hiredAgents, setHiredAgents] = useState<DashboardHire[]>([])
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [reputations, setReputations] = useState<Record<string, { count: number; avg: number }>>({})
   const [verifications, setVerifications] = useState<Record<string, VerificationResult | null>>({})
@@ -145,9 +163,9 @@ export default function DashboardPage() {
       setLeaderboard((lbData.leaderboard || []) as LeaderboardEntry[])
     }).finally(() => setLoadingArena(false))
 
-    // Fetch hired agents
-    apiGetUserHires(walletAddress)
-      .then((data) => setHiredAgents((data.hires || []) as unknown as HiredAgent[]))
+    // Fetch hired agents (from Redis hire records)
+    apiGetMyHires(walletAddress)
+      .then((data) => setHiredAgents((data.hires || []) as unknown as DashboardHire[]))
       .catch(() => {})
       .finally(() => setLoadingHires(false))
   }, [walletAddress])
@@ -301,10 +319,10 @@ export default function DashboardPage() {
                 loading={loadingBalances}
               />
               <StatCard
-                label="Arena Record"
-                value={loadingArena ? "..." : `${totalWins}W / ${totalBattles - totalWins}L`}
-                subtext={totalBattles > 0 ? `${((totalWins / totalBattles) * 100).toFixed(0)}% win rate` : ""}
-                loading={loadingArena}
+                label="Verified"
+                value={loadingBalances ? "..." : `${Object.values(verifications).filter(Boolean).length} / ${myAgents.length}`}
+                subtext="agents verified"
+                loading={loadingBalances}
               />
             </div>
           </motion.div>
@@ -337,6 +355,8 @@ export default function DashboardPage() {
                       isExpanded={expandedAgent === key}
                       loadingBalance={loadingBalances}
                       onToggle={() => handleExpand(agent)}
+                      onVerified={(v) => setVerifications((prev) => ({ ...prev, [key]: v }))}
+                      signedFetch={signedFetch}
                     />
                   )
                 })}
@@ -397,17 +417,7 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  <div className="border border-border/60 bg-foreground/[0.02] p-4">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-1">
-                      Withdraw
-                    </span>
-                    <p className="font-mono text-[11px] text-muted-foreground leading-relaxed">
-                      To withdraw USDC from your agent wallets, use the 8004agent CLI:
-                    </p>
-                    <code className="font-mono text-xs text-foreground bg-foreground/5 px-2 py-1 mt-2 inline-block border border-border/40">
-                      npx 8004agent withdraw
-                    </code>
-                  </div>
+                  <WithdrawSection agents={myAgents} balances={balances} walletAddress={walletAddress} onBalanceUpdate={(key, newBal) => setBalances((prev) => ({ ...prev, [key]: newBal }))} />
                 </>
               )}
             </div>
@@ -581,13 +591,13 @@ export default function DashboardPage() {
                     No hire history found
                   </span>
                   <p className="font-mono text-[10px] text-muted-foreground/40 mt-2">
-                    Only recent hires on Avalanche Fuji are tracked
+                    Hire an agent to see your history here
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {hiredAgents.map((agent, i) => (
-                    <HiredAgentCard key={`hired-${i}`} agent={agent} />
+                  {hiredAgents.map((hire, i) => (
+                    <HiredAgentCard key={`hired-${hire.hireId || i}`} hire={hire} />
                   ))}
                 </div>
               )}
@@ -663,7 +673,7 @@ function BalanceBar({ name, balance, total }: { name: string; balance: number; t
   )
 }
 
-function DashboardAgentCard({ agent, balance, reputation, verification, feedbackList, isExpanded, loadingBalance, onToggle }: {
+function DashboardAgentCard({ agent, balance, reputation, verification, feedbackList, isExpanded, loadingBalance, onToggle, onVerified, signedFetch }: {
   agent: Agent
   balance?: number
   reputation?: { count: number; avg: number }
@@ -672,11 +682,28 @@ function DashboardAgentCard({ agent, balance, reputation, verification, feedback
   isExpanded: boolean
   loadingBalance: boolean
   onToggle: () => void
+  onVerified: (v: VerificationResult) => void
+  signedFetch?: ((url: string, init?: RequestInit) => Promise<Response>) | null
 }) {
   const networkName = CONTRACTS[agent.network]?.name || agent.network
   const isActive = agent.status === "active"
   const skills = Array.isArray(agent.skills) ? agent.skills : []
   const hp = parseFloat(agent.hirePrice || "0")
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
+
+  async function handleVerify() {
+    setVerifying(true)
+    setVerifyError(null)
+    try {
+      const result = await apiVerifyAgent(agent.network, agent.agentId, signedFetch)
+      onVerified(result)
+    } catch (e: unknown) {
+      setVerifyError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   return (
     <div className={cn("border p-5 relative transition-colors", isExpanded ? "border-foreground/30 col-span-1 md:col-span-2 lg:col-span-3" : "border-border hover:border-foreground/20")}>
@@ -692,7 +719,7 @@ function DashboardAgentCard({ agent, balance, reputation, verification, feedback
           )}
           {verification && (
             <span className={cn("font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border shrink-0", TIER_STYLES[verification.riskTier] || "border-border text-muted-foreground")}>
-              {verification.riskTier} {verification.overallScore}
+              {verificationLabel(verification.overallScore)}
             </span>
           )}
         </div>
@@ -783,6 +810,37 @@ function DashboardAgentCard({ agent, balance, reputation, verification, feedback
                 </div>
               )}
 
+              {/* Verification */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">ERC-8126 Verification</span>
+                  <button
+                    onClick={handleVerify}
+                    disabled={verifying || !agent.agentId || agent.agentId === "pending"}
+                    className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1.5 hover:border-foreground/30 hover:text-foreground transition-colors text-muted-foreground disabled:opacity-30"
+                  >
+                    {verifying ? "Verifying..." : verification ? "Re-verify" : "Verify Now"}
+                  </button>
+                </div>
+                {verification ? (
+                  <div className="flex items-center gap-4">
+                    <span className={cn("font-mono text-sm font-bold px-3 py-1 border", TIER_STYLES[verification.riskTier] || "border-border text-muted-foreground")}>
+                      {verificationLabel(verification.overallScore)}
+                    </span>
+                    <span className="font-mono text-[10px] text-muted-foreground/60">
+                      {verification.verifiedAt ? new Date(verification.verifiedAt).toLocaleDateString() : ""}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="font-mono text-[10px] text-muted-foreground/40">Not yet verified</span>
+                )}
+                {verifyError && (
+                  <div className="mt-2 border border-red-500/40 bg-red-500/5 px-3 py-1.5">
+                    <span className="font-mono text-[10px] text-red-500">{verifyError}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Reputation */}
               {reputation && reputation.count > 0 && (
                 <div>
@@ -825,33 +883,248 @@ function DashboardAgentCard({ agent, balance, reputation, verification, feedback
   )
 }
 
-function HiredAgentCard({ agent }: { agent: HiredAgent }) {
-  const networkName = CONTRACTS[agent.network]?.name || agent.network
-  const isActive = agent.status === "active"
+function HiredAgentCard({ hire }: { hire: DashboardHire }) {
+  const router = useRouter()
+  const networkName = CONTRACTS[hire.network]?.name || hire.network
+  const agentName = hire.agent?.name || `Agent #${hire.agentId}`
+  const callsUsed = Number(hire.callsUsed) || 0
+  const callsTotal = Number(hire.callsTotal) || 1
+  const usagePercent = Math.min(100, (callsUsed / callsTotal) * 100)
+  const pricePaid = parseFloat(hire.pricePaid || "0")
+  const isActive = hire.status === "active"
+  const isExpired = hire.status === "expired"
+  const isExhausted = hire.status === "exhausted"
+  const expiresAt = hire.expiresAt ? new Date(hire.expiresAt).toLocaleDateString() : ""
+
+  const statusLabel = isActive ? "ACTIVE" : isExpired ? "EXPIRED" : isExhausted ? "EXHAUSTED" : hire.status?.toUpperCase() || ""
+  const statusColor = isActive ? "text-system-green border-system-green/40" : isExhausted ? "text-warning-amber border-warning-amber/40" : "text-error-red border-error-red/40"
 
   return (
     <div className="border border-border p-5 relative">
       <CornerBrackets />
       <div className="flex items-center gap-2 mb-1.5">
-        <span className={cn("h-2 w-2 rounded-full shrink-0", isActive ? "bg-system-green" : "bg-error-red")} />
-        <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground truncate">{agent.name}</span>
-        {agent.agentId && agent.agentId !== "pending" && (
-          <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{agent.agentId}</span>
-        )}
+        <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground truncate">{agentName}</span>
+        <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{hire.agentId}</span>
       </div>
+
       <div className="flex items-center gap-2 mb-3">
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/50 border border-border px-1.5 py-0.5">{networkName}</span>
+        <span className={cn("font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 border", statusColor)}>
+          {statusLabel}
+        </span>
         <span className="font-mono text-[9px] uppercase tracking-wider text-info-blue">
-          Paid ${agent.paymentAmount.toFixed(2)} USDC
+          {hire.plan}
         </span>
       </div>
-      {agent.description && (
-        <p className="font-mono text-[11px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">{agent.description}</p>
+
+      {/* Usage bar */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-mono text-[9px] text-muted-foreground/50">{callsUsed} / {callsTotal} calls</span>
+          <span className={cn("font-mono text-[9px]", usagePercent > 90 ? "text-error-red" : usagePercent > 70 ? "text-warning-amber" : "text-system-green")}>
+            {usagePercent.toFixed(0)}%
+          </span>
+        </div>
+        <div className="w-full h-1.5 bg-muted-foreground/10 overflow-hidden">
+          <div
+            className={cn("h-full transition-all", usagePercent > 90 ? "bg-error-red" : usagePercent > 70 ? "bg-warning-amber" : "bg-system-green")}
+            style={{ width: `${usagePercent}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-mono text-[9px] text-muted-foreground/40">Paid ${pricePaid.toFixed(2)} USDC</span>
+        {expiresAt && <span className="font-mono text-[9px] text-muted-foreground/40">Expires {expiresAt}</span>}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+        {isActive && (
+          <button
+            onClick={() => router.push(`/workspace?network=${hire.network}&agentId=${hire.agentId}&hireId=${hire.hireId}`)}
+            className="flex-1 font-mono text-[10px] uppercase tracking-widest py-1.5 border border-system-green/40 text-system-green hover:bg-system-green/5 transition-colors text-center"
+          >
+            OPEN WORKSPACE
+          </button>
+        )}
+        {(isExpired || isExhausted) && (
+          <button
+            onClick={() => router.push(`/hire?network=${hire.network}&agentId=${hire.agentId}`)}
+            className="flex-1 font-mono text-[10px] uppercase tracking-widest py-1.5 border border-warning-amber/40 text-warning-amber hover:bg-warning-amber/5 transition-colors text-center"
+          >
+            RENEW
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function WithdrawSection({ agents, balances, walletAddress, onBalanceUpdate }: {
+  agents: Agent[]
+  balances: Record<string, number>
+  walletAddress: string
+  onBalanceUpdate: (key: string, newBal: number) => void
+}) {
+  const { signer } = useWallet()
+  const [withdrawingAgent, setWithdrawingAgent] = useState<string | null>(null)
+  const [withdrawAmount, setWithdrawAmount] = useState("")
+  const [withdrawStatus, setWithdrawStatus] = useState<string | null>(null)
+  const [withdrawError, setWithdrawError] = useState<string | null>(null)
+
+  const agentsWithBalance = agents.filter((a) => {
+    const key = `${a.network}:${a.agentId}`
+    return (balances[key] || 0) > 0 && a.agentWalletAddress
+  })
+
+  async function handleWithdraw(agent: Agent) {
+    const key = `${agent.network}:${agent.agentId}`
+    const bal = balances[key] || 0
+    const amount = parseFloat(withdrawAmount) || bal
+
+    if (amount <= 0 || amount > bal) {
+      setWithdrawError("Invalid amount")
+      return
+    }
+
+    setWithdrawStatus("Sign the withdrawal request...")
+    setWithdrawError(null)
+
+    try {
+      // Sign a message to prove ownership of the wallet
+      if (!signer) throw new Error("Wallet not connected")
+      const withdrawMessage = `Withdraw ${amount} USDC from agent ${agent.agentId} to ${walletAddress}`
+      const signature = await signer.signMessage(withdrawMessage)
+
+      setWithdrawStatus("Submitting withdrawal...")
+
+      const result = await apiWithdraw({
+        agentId: agent.agentId,
+        network: "fuji",
+        toAddress: walletAddress,
+        amount: amount.toString(),
+        ownerAddress: walletAddress,
+        usdcAddress: USDC_ADDRESS,
+        message: withdrawMessage,
+        signature,
+      })
+
+      // Poll for confirmation if circleTxId returned
+      if (result.circleTxId) {
+        setWithdrawStatus("Waiting for Circle confirmation...")
+        let confirmed = false
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 3000))
+          try {
+            const status = await apiWithdrawStatus(result.circleTxId)
+            if (status.status === "CONFIRMED") {
+              setWithdrawStatus(`Withdraw successful!${status.txHash ? ` TX: ${status.txHash.slice(0, 10)}...` : ""}`)
+              confirmed = true
+              break
+            }
+            if (status.status === "FAILED" || status.status === "DENIED" || status.status === "CANCELLED") {
+              throw new Error(`Transaction ${status.status.toLowerCase()}`)
+            }
+          } catch { /* keep polling */ }
+        }
+        if (!confirmed) {
+          setWithdrawStatus("Withdrawal submitted — check Circle dashboard for confirmation.")
+        }
+      } else {
+        setWithdrawStatus("Withdrawal submitted!")
+      }
+
+      onBalanceUpdate(key, Math.max(0, bal - amount))
+      setWithdrawingAgent(null)
+      setWithdrawAmount("")
+
+      setTimeout(() => setWithdrawStatus(null), 5000)
+    } catch (e: unknown) {
+      setWithdrawError(e instanceof Error ? e.message : String(e))
+      setWithdrawStatus(null)
+    }
+  }
+
+  return (
+    <div className="border-t border-border pt-4">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-3">
+        Withdraw
+      </span>
+
+      {agentsWithBalance.length === 0 ? (
+        <span className="font-mono text-[10px] text-muted-foreground/40">No agents with balance to withdraw</span>
+      ) : (
+        <div className="space-y-2">
+          {agentsWithBalance.map((agent) => {
+            const key = `${agent.network}:${agent.agentId}`
+            const bal = balances[key] || 0
+            const isOpen = withdrawingAgent === key
+
+            return (
+              <div key={key} className="border border-border/60 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs uppercase tracking-wider text-foreground">{agent.name}</span>
+                    <span className="font-mono text-xs font-bold text-system-green">${bal.toFixed(2)}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setWithdrawingAgent(isOpen ? null : key)
+                      setWithdrawAmount(bal.toString())
+                      setWithdrawError(null)
+                    }}
+                    className="font-mono text-[10px] uppercase tracking-widest px-3 py-1 border border-border hover:border-foreground/30 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {isOpen ? "CANCEL" : "WITHDRAW"}
+                  </button>
+                </div>
+
+                {isOpen && (
+                  <div className="mt-3 pt-3 border-t border-border/40 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        placeholder="Amount"
+                        step="0.01"
+                        max={bal}
+                        className="flex-1 bg-transparent border border-border px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-foreground/40"
+                      />
+                      <button
+                        onClick={() => setWithdrawAmount(bal.toString())}
+                        className="font-mono text-[9px] uppercase tracking-wider px-2 py-2 border border-border text-muted-foreground hover:text-foreground"
+                      >
+                        MAX
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[9px] text-muted-foreground/50">To: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+                    </div>
+                    <button
+                      onClick={() => handleWithdraw(agent)}
+                      className="w-full font-mono text-[10px] uppercase tracking-widest py-2 bg-foreground text-background hover:opacity-90 transition-opacity"
+                    >
+                      CONFIRM WITHDRAW
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       )}
-      {agent.paymentTxHash && (
-        <div className="flex items-center gap-1">
-          <span className="font-mono text-[9px] text-muted-foreground/40">TX:</span>
-          <span className="font-mono text-[9px] text-muted-foreground/60">{truncAddr(agent.paymentTxHash)}</span>
+
+      {withdrawStatus && (
+        <div className="mt-3 border border-system-green/30 bg-system-green/5 px-3 py-2">
+          <span className="font-mono text-[10px] text-system-green">{withdrawStatus}</span>
+        </div>
+      )}
+
+      {withdrawError && (
+        <div className="mt-3 border border-error-red/30 bg-error-red/5 px-3 py-2">
+          <span className="font-mono text-[10px] text-error-red">{withdrawError}</span>
         </div>
       )}
     </div>

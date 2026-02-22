@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { ethers } from "ethers"
-import { CONTRACTS, REPUTATION_REGISTRY_ABI } from "@/lib/deploy-constants"
+import { CONTRACTS, REPUTATION_REGISTRY_ABI, OASF_SKILLS, APPLICATION_DOMAINS } from "@/lib/deploy-constants"
 import { useRouter } from "next/navigation"
 import { apiListAgents, apiVerifyAgent, apiGetVerification, type VerificationResult } from "@/lib/api"
-import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
 import { useWallet } from "@/components/wallet-provider"
 
 // ---- Types ----
@@ -37,6 +36,11 @@ interface Agent {
   circleWalletId: string
 }
 
+interface GroupedAgent extends Agent {
+  networks: string[]
+  agentsByNetwork: Record<string, Agent>
+}
+
 interface FeedbackEntry {
   clientAddress: string
   index: number
@@ -46,10 +50,48 @@ interface FeedbackEntry {
   isRevoked: boolean
 }
 
-const NETWORK_FILTERS = [
-  { key: "all", label: "ALL" },
-  ...Object.entries(CONTRACTS).map(([key, c]) => ({ key, label: c.name })),
-]
+// ---- Chain short labels ----
+const CHAIN_SHORT: Record<string, string> = {
+  sepolia: "ETH",
+  baseSepolia: "BASE",
+  fuji: "AVAX",
+  arbitrumSepolia: "ARB",
+  monadTestnet: "MON",
+}
+
+const CHAIN_COLOR: Record<string, string> = {
+  sepolia: "border-blue-500/40 text-blue-400",
+  baseSepolia: "border-cyan-500/40 text-cyan-400",
+  fuji: "border-red-500/40 text-red-400",
+  arbitrumSepolia: "border-sky-500/40 text-sky-400",
+  monadTestnet: "border-purple-500/40 text-purple-400",
+}
+
+// ---- Grouping ----
+function groupAgents(agents: Agent[]): GroupedAgent[] {
+  const map = new Map<string, GroupedAgent>()
+  for (const a of agents) {
+    const key = `${a.name.toLowerCase()}:${(a.ownerAddress || "").toLowerCase()}`
+    if (map.has(key)) {
+      const g = map.get(key)!
+      if (!g.networks.includes(a.network)) {
+        g.networks.push(a.network)
+        g.agentsByNetwork[a.network] = a
+      }
+    } else {
+      map.set(key, {
+        ...a,
+        networks: [a.network],
+        agentsByNetwork: { [a.network]: a },
+      })
+    }
+  }
+  return Array.from(map.values())
+}
+
+// ---- All skills flat list for filter ----
+const ALL_SKILLS = Object.values(OASF_SKILLS).flat()
+const ALL_DOMAINS = Object.values(APPLICATION_DOMAINS).flat()
 
 const PAGE_SIZE = 18
 
@@ -57,9 +99,11 @@ export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState("all")
-  const [selected, setSelected] = useState<Agent | null>(null)
+  const [selected, setSelected] = useState<GroupedAgent | null>(null)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState("")
+  const [skillFilter, setSkillFilter] = useState("")
+  const [domainFilter, setDomainFilter] = useState("")
 
   useEffect(() => {
     apiListAgents()
@@ -68,7 +112,35 @@ export default function AgentsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = filter === "all" ? agents : agents.filter((a) => a.network === filter)
+  const grouped = groupAgents(agents)
+
+  // Apply filters
+  let filtered = grouped
+
+  // Search filter
+  if (search.trim()) {
+    const q = search.trim().toLowerCase()
+    filtered = filtered.filter(
+      (g) => g.name.toLowerCase().includes(q) || (g.description || "").toLowerCase().includes(q)
+    )
+  }
+
+  // Skill filter
+  if (skillFilter) {
+    filtered = filtered.filter((g) => {
+      const skills = Array.isArray(g.skills) ? g.skills : []
+      return skills.some((s) => s.toLowerCase() === skillFilter.toLowerCase())
+    })
+  }
+
+  // Domain filter
+  if (domainFilter) {
+    filtered = filtered.filter((g) => {
+      const domains = Array.isArray(g.domains) ? g.domains : []
+      return domains.some((d) => d.toLowerCase() === domainFilter.toLowerCase())
+    })
+  }
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
@@ -88,23 +160,54 @@ export default function AgentsPage() {
             </p>
           </div>
 
-          {/* Network Filter */}
+          {/* Search + Filters */}
           {!selected && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {NETWORK_FILTERS.map((nf) => (
-                <button
-                  key={nf.key}
-                  onClick={() => { setFilter(nf.key); setSelected(null); setPage(1) }}
-                  className={cn(
-                    "font-mono text-[10px] uppercase tracking-wider px-3 py-1.5 border transition-colors",
-                    filter === nf.key
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                  )}
+            <div className="flex flex-col gap-3 mb-6">
+              {/* Search bar */}
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                placeholder="Search agents by name or description..."
+                className="w-full bg-transparent border border-border px-4 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/40 transition-colors"
+              />
+
+              {/* Filter row */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Skill filter dropdown */}
+                <select
+                  value={skillFilter}
+                  onChange={(e) => { setSkillFilter(e.target.value); setPage(1) }}
+                  className="font-mono text-[10px] uppercase tracking-wider px-2 py-1.5 border border-border bg-transparent text-muted-foreground focus:outline-none focus:border-foreground/40 cursor-pointer"
                 >
-                  {nf.label}
-                </button>
-              ))}
+                  <option value="">All Skills</option>
+                  {ALL_SKILLS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+
+                {/* Domain filter dropdown */}
+                <select
+                  value={domainFilter}
+                  onChange={(e) => { setDomainFilter(e.target.value); setPage(1) }}
+                  className="font-mono text-[10px] uppercase tracking-wider px-2 py-1.5 border border-border bg-transparent text-muted-foreground focus:outline-none focus:border-foreground/40 cursor-pointer"
+                >
+                  <option value="">All Domains</option>
+                  {ALL_DOMAINS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+
+                {/* Clear filters */}
+                {(search || skillFilter || domainFilter) && (
+                  <button
+                    onClick={() => { setSearch(""); setSkillFilter(""); setDomainFilter(""); setPage(1) }}
+                    className="font-mono text-[10px] uppercase tracking-wider px-3 py-1.5 border border-error-red/40 text-error-red hover:bg-error-red/5 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -112,7 +215,7 @@ export default function AgentsPage() {
           {!loading && !error && !selected && (
             <div className="mb-4 flex items-center gap-3">
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
-                {filtered.length} agent{filtered.length !== 1 ? "s" : ""}{filter !== "all" ? ` on ${CONTRACTS[filter]?.name || filter}` : ""}
+                {filtered.length} agent{filtered.length !== 1 ? "s" : ""}
               </span>
               {totalPages > 1 && (
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/40">
@@ -139,14 +242,14 @@ export default function AgentsPage() {
             ) : filtered.length === 0 ? (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border border-border p-8 text-center">
                 <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/60">
-                  No agents found{filter !== "all" ? ` on ${CONTRACTS[filter]?.name || filter}` : ""}
+                  No agents found
                 </span>
               </motion.div>
             ) : (
               <motion.div key={`grid-${page}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paged.map((agent, i) => (
-                    <AgentCard key={`${agent.network}-${agent.agentId}-${i}`} agent={agent} onClick={() => setSelected(agent)} />
+                    <AgentCard key={`${agent.name}-${agent.ownerAddress}-${i}`} agent={agent} onClick={() => setSelected(agent)} />
                   ))}
                 </div>
                 {totalPages > 1 && (
@@ -206,6 +309,14 @@ const TIER_STYLES: Record<string, string> = {
   CRITICAL: "border-red-600/60 text-red-600 bg-red-600/10",
 }
 
+function verificationLabel(score: number): string {
+  if (score >= 80) return `\u2713 VERIFIED ${score}`
+  if (score >= 60) return `VERIFIED ${score}`
+  if (score >= 40) return `PARTIAL ${score}`
+  if (score >= 20) return `LOW ${score}`
+  return `RISK ${score}`
+}
+
 function VerificationBadge({ network, agentId }: { network: string; agentId: string }) {
   const [verification, setVerification] = useState<VerificationResult | null>(null)
 
@@ -222,17 +333,24 @@ function VerificationBadge({ network, agentId }: { network: string; agentId: str
 
   return (
     <span className={cn("font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border shrink-0", style)}>
-      {verification.riskTier} {verification.overallScore}
+      {verificationLabel(verification.overallScore)}
     </span>
   )
 }
 
-// ---- Agent Card ----
-function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
+// ---- Trust Model Badges ----
+const TRUST_BADGE: Record<string, { label: string; style: string }> = {
+  reputation: { label: "REP", style: "border-green-500/40 text-green-500" },
+  "tee-attestation": { label: "TEE", style: "border-purple-500/40 text-purple-400" },
+  "crypto-economic": { label: "STAKE", style: "border-yellow-500/40 text-yellow-500" },
+}
+
+// ---- Agent Card (grouped) ----
+function AgentCard({ agent, onClick }: { agent: GroupedAgent; onClick: () => void }) {
   const router = useRouter()
-  const networkName = CONTRACTS[agent.network]?.name || agent.network
   const isActive = agent.status === "active"
   const skills = Array.isArray(agent.skills) ? agent.skills : []
+  const trustModels = Array.isArray(agent.trustModels) ? agent.trustModels : []
   const hp = parseFloat(agent.hirePrice || "0")
   const date = agent.registeredAt ? new Date(agent.registeredAt).toLocaleDateString() : ""
 
@@ -247,17 +365,39 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
           {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{agent.agentId}</span>}
           <VerificationBadge network={agent.network} agentId={agent.agentId} />
         </div>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/50 border border-border px-1.5 py-0.5">{networkName}</span>
-          <span className={cn("font-mono text-[9px] uppercase tracking-wider", hp > 0 ? "text-system-green" : "text-muted-foreground/40")}>{hp > 0 ? `$${hp.toFixed(2)} USDC` : "FREE"}</span>
+
+        {/* Chain logos row */}
+        <div className="flex items-center gap-1.5 mb-3">
+          {agent.networks.map((nk) => (
+            <span key={nk} className={cn("font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border", CHAIN_COLOR[nk] || "border-border text-muted-foreground/60")}>
+              {CHAIN_SHORT[nk] || nk}
+            </span>
+          ))}
+          <span className={cn("font-mono text-[9px] uppercase tracking-wider ml-auto", hp > 0 ? "text-system-green" : "text-muted-foreground/40")}>{hp > 0 ? `$${hp.toFixed(2)} USDC` : "FREE"}</span>
         </div>
+
         {agent.description && <p className="font-mono text-[11px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">{agent.description}</p>}
+
+        {/* Skills */}
         {skills.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {skills.slice(0, 3).map((s) => <span key={s} className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60 border border-border/60 px-1.5 py-0.5">{s}</span>)}
             {skills.length > 3 && <span className="font-mono text-[9px] text-muted-foreground/40">+{skills.length - 3}</span>}
           </div>
         )}
+
+        {/* Trust model + x402 badges */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {trustModels.map((tm) => {
+            const badge = TRUST_BADGE[tm]
+            if (!badge) return null
+            return <span key={tm} className={cn("font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border", badge.style)}>{badge.label}</span>
+          })}
+          {agent.x402Payment === "true" && (
+            <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 border border-system-green/40 text-system-green">x402</span>
+          )}
+        </div>
+
         <div className="flex items-center justify-between">
           {agent.ownerAddress && <span className="font-mono text-[9px] text-muted-foreground/40 truncate">{agent.ownerAddress.slice(0, 6)}...{agent.ownerAddress.slice(-4)}</span>}
           {date && <span className="font-mono text-[9px] text-muted-foreground/40 shrink-0">{date}</span>}
@@ -277,7 +417,7 @@ function AgentCard({ agent, onClick }: { agent: Agent; onClick: () => void }) {
           onClick={onClick}
           className="flex-1 font-mono text-[10px] uppercase tracking-widest py-1.5 border border-info-blue/40 text-info-blue hover:bg-info-blue/5 transition-colors text-center"
         >
-          FEEDBACK
+          DETAILS
         </button>
       </div>
     </div>
@@ -295,14 +435,15 @@ function DetailRow({ label, value, children }: { label: string; value?: string; 
 }
 
 // ---- Agent Detail ----
-function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
+function AgentDetail({ agent, onBack }: { agent: GroupedAgent; onBack: () => void }) {
   const router = useRouter()
+  const { walletAddress } = useWallet()
   const networkConfig = CONTRACTS[agent.network]
-  const networkName = networkConfig?.name || agent.network
   const blockExplorer = networkConfig?.blockExplorer || ""
   const isActive = agent.status === "active"
   const date = agent.registeredAt ? new Date(agent.registeredAt).toLocaleString() : ""
   const hp = parseFloat(agent.hirePrice || "0")
+  const trustModels = Array.isArray(agent.trustModels) ? agent.trustModels : []
 
   return (
     <div className="flex flex-col gap-5">
@@ -315,20 +456,38 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
         {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-sm text-muted-foreground/60">#{agent.agentId}</span>}
       </div>
 
-      {/* Hire + Feedback action bar */}
+      {/* Deployed On (chain logos) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">Deployed on:</span>
+        {agent.networks.map((nk) => (
+          <span key={nk} className={cn("font-mono text-[9px] uppercase tracking-wider px-2 py-1 border", CHAIN_COLOR[nk] || "border-border text-muted-foreground/60")}>
+            {CONTRACTS[nk]?.name || nk}
+          </span>
+        ))}
+      </div>
+
+      {/* Trust + x402 badges */}
+      {(trustModels.length > 0 || agent.x402Payment === "true") && (
+        <div className="flex flex-wrap gap-2">
+          {trustModels.map((tm) => {
+            const badge = TRUST_BADGE[tm]
+            if (!badge) return null
+            return <span key={tm} className={cn("font-mono text-[9px] uppercase tracking-wider px-2 py-1 border", badge.style)}>{tm === "reputation" ? "Reputation-Based" : tm === "tee-attestation" ? "TEE Attestation" : "Crypto-Economic"}</span>
+          })}
+          {agent.x402Payment === "true" && (
+            <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-1 border border-system-green/40 text-system-green">x402 Payments Enabled</span>
+          )}
+        </div>
+      )}
+
+      {/* Hire action bar */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push(`/hire?network=${agent.network}&agentId=${agent.agentId}`)}
           className="font-mono text-xs uppercase tracking-widest px-6 py-2.5 bg-system-green/10 border border-system-green/40 text-system-green hover:bg-system-green/20 transition-colors"
         >
-          {hp > 0 ? `HIRE — $${hp.toFixed(2)} / call` : "HIRE — FREE"}
+          {hp > 0 ? `HIRE \u2014 $${hp.toFixed(2)} / call` : "HIRE \u2014 FREE"}
         </button>
-        <a
-          href="#feedback"
-          className="font-mono text-xs uppercase tracking-widest px-6 py-2.5 border border-info-blue/40 text-info-blue hover:bg-info-blue/5 transition-colors"
-        >
-          GIVE FEEDBACK
-        </a>
       </div>
 
       {/* Basic Info */}
@@ -341,16 +500,15 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
           </DetailRow>
           <DetailRow label="DESCRIPTION" value={agent.description} />
           <DetailRow label="AGENT ID" value={agent.agentId || "Pending"} />
-          <DetailRow label="NETWORK" value={networkName} />
           <DetailRow label="STATUS">
             <span className={cn("text-xs", isActive ? "text-system-green" : "text-error-red")}>{agent.status?.toUpperCase() || "UNKNOWN"}</span>
           </DetailRow>
           <DetailRow label="OWNER">
-            <span className="text-xs text-foreground break-all">{agent.ownerAddress || "—"}</span>
+            <span className="text-xs text-foreground break-all">{agent.ownerAddress || "\u2014"}</span>
           </DetailRow>
-          <DetailRow label="VERSION" value={agent.version || "—"} />
+          <DetailRow label="VERSION" value={agent.version || "\u2014"} />
           {agent.author && <DetailRow label="AUTHOR" value={agent.author} />}
-          <DetailRow label="LICENSE" value={agent.license || "—"} />
+          <DetailRow label="LICENSE" value={agent.license || "\u2014"} />
           {agent.registrationTx && (
             <DetailRow label="REG TX">
               <a href={`${blockExplorer}/tx/${agent.registrationTx}`} target="_blank" rel="noopener noreferrer" className="text-info-blue hover:underline break-all text-xs">{agent.registrationTx}</a>
@@ -373,30 +531,22 @@ function AgentDetail({ agent, onBack }: { agent: Agent; onBack: () => void }) {
       )}
 
       {/* ERC-8126 Verification */}
-      <VerificationSection agent={agent} />
+      <VerificationSection agent={agent} isOwner={!!walletAddress && agent.ownerAddress?.toLowerCase() === walletAddress.toLowerCase()} />
 
-      {/* Feedback / Reputation */}
-      <div id="feedback">
-        <FeedbackSection agent={agent} />
-      </div>
+      {/* Feedback / Reputation (read-only) */}
+      <FeedbackSection agent={agent} />
     </div>
   )
 }
 
-// ---- Feedback Section ----
+// ---- Feedback Section (read-only — submission moved to workspace after hire usage) ----
 function FeedbackSection({ agent }: { agent: Agent }) {
-  const { walletAddress, signer } = useWallet()
   const networkConfig = CONTRACTS[agent.network]
   const [feedbacks, setFeedbacks] = useState<FeedbackEntry[]>([])
   const [summary, setSummary] = useState<{ count: number; avg: number } | null>(null)
   const [loadingFeedback, setLoadingFeedback] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitMsg, setSubmitMsg] = useState<string | null>(null)
-  const [score, setScore] = useState(5)
-  const [comment, setComment] = useState("")
   const fetchedRef = useRef(false)
 
-  // Fetch feedback from chain on mount
   useEffect(() => {
     if (fetchedRef.current) return
     fetchedRef.current = true
@@ -413,7 +563,6 @@ function FeedbackSection({ agent }: { agent: Agent }) {
       const provider = new ethers.JsonRpcProvider(networkConfig.rpc)
       const contract = new ethers.Contract(networkConfig.reputationRegistry, REPUTATION_REGISTRY_ABI, provider)
 
-      // Get all clients who gave feedback
       const clients: string[] = await contract.getClients(agent.agentId)
 
       if (clients.length === 0) {
@@ -422,7 +571,6 @@ function FeedbackSection({ agent }: { agent: Agent }) {
         return
       }
 
-      // Get summary
       try {
         const [count, summaryValue, summaryDecimals] = await contract.getSummary(agent.agentId, clients, "", "")
         const countNum = Number(count)
@@ -432,7 +580,6 @@ function FeedbackSection({ agent }: { agent: Agent }) {
         setSummary({ count: 0, avg: 0 })
       }
 
-      // Read individual feedbacks
       const entries: FeedbackEntry[] = []
       for (const client of clients) {
         const lastIndex = Number(await contract.getLastIndex(agent.agentId, client))
@@ -460,54 +607,6 @@ function FeedbackSection({ agent }: { agent: Agent }) {
     }
   }
 
-  async function handleSubmit() {
-    if (!walletAddress || !signer || !agent.agentId || agent.agentId === "pending") return
-    setSubmitting(true)
-    setSubmitMsg(null)
-
-    try {
-      // Sign feedback message to prove wallet ownership
-      const sigMessage = `I give feedback score ${score}/5 to agent #${agent.agentId} (${agent.name}) on ${networkConfig.name} via 8004agent.network`
-      const signature = await signer.signMessage(sigMessage)
-
-      const facConfig = { network: networkConfig.facinetNetwork, chainId: networkConfig.chainId }
-      const facilitator = await selectFacilitator(facConfig)
-
-      // Build feedbackHash from signature (proves user signed this specific feedback)
-      const feedbackHash = ethers.keccak256(ethers.toUtf8Bytes(signature))
-
-      await facinetExecuteContract(facConfig, {
-        contractAddress: networkConfig.reputationRegistry as `0x${string}`,
-        functionName: "giveFeedback",
-        functionArgs: [
-          agent.agentId,         // agentId
-          score,                 // value (1-5 scale, 0 decimals)
-          0,                     // valueDecimals
-          "rating",              // tag1
-          comment || "",         // tag2 (store short comment here)
-          agent.url || "",       // endpoint
-          `sig:${walletAddress}`,// feedbackURI — marks who signed
-          feedbackHash,          // feedbackHash — hash of user's signature
-        ],
-        abi: REPUTATION_REGISTRY_ABI,
-      }, facilitator)
-
-      setSubmitMsg("Feedback submitted on-chain!")
-      setComment("")
-      setScore(5)
-
-      // Refresh feedback
-      fetchedRef.current = false
-      setLoadingFeedback(true)
-      fetchFeedback()
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setSubmitMsg(`Failed: ${msg}`)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   return (
     <div className="flex flex-col gap-5">
       {/* Summary Stats */}
@@ -523,7 +622,7 @@ function FeedbackSection({ agent }: { agent: Agent }) {
           <div className="grid grid-cols-3 gap-4">
             <div className="border border-border p-4 text-center">
               <span className="font-mono text-2xl font-bold text-foreground block">
-                {summary ? `${summary.avg.toFixed(1)}/5` : "—"}
+                {summary ? `${summary.avg.toFixed(1)}/5` : "\u2014"}
               </span>
               <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60">Avg Score</span>
             </div>
@@ -543,73 +642,11 @@ function FeedbackSection({ agent }: { agent: Agent }) {
         )}
       </div>
 
-      {/* Submit Feedback */}
-      <div className="border border-border p-5 relative">
-        <CornerBrackets />
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-4">Give Feedback</span>
-
-        {!walletAddress ? (
-          <div className="border border-warning-amber/40 bg-warning-amber/5 px-4 py-3">
-            <span className="font-mono text-xs uppercase tracking-wider text-warning-amber">Connect wallet from navbar to give feedback</span>
-          </div>
-        ) : agent.ownerAddress && walletAddress.toLowerCase() === agent.ownerAddress.toLowerCase() ? (
-          <div className="border border-border px-4 py-3">
-            <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground/60">You cannot review your own agent</span>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {/* Score selector */}
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-2">Score</span>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setScore(v)}
-                    className={cn(
-                      "w-10 h-10 font-mono text-sm font-bold border transition-colors",
-                      v === score
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                    )}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Comment */}
-            <div>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60 block mb-2">Comment (optional)</span>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Your feedback..."
-                rows={3}
-                className="w-full bg-transparent border border-border px-4 py-2.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/40 transition-colors resize-none no-scrollbar"
-              />
-            </div>
-
-            {/* Submit */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !agent.agentId || agent.agentId === "pending"}
-                className="font-mono text-xs uppercase tracking-widest bg-foreground text-background px-6 py-2.5 hover:opacity-90 transition-opacity disabled:opacity-30"
-              >
-                {submitting ? "Submitting..." : "Submit Feedback"}
-              </button>
-              <span className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-wider">Gas covered by Facinet</span>
-            </div>
-
-            {submitMsg && (
-              <span className={cn("font-mono text-xs uppercase tracking-wider", submitMsg.startsWith("Failed") ? "text-error-red" : "text-system-green")}>
-                {submitMsg}
-              </span>
-            )}
-          </div>
-        )}
+      {/* Info: feedback only after hire */}
+      <div className="border border-border/60 px-4 py-3 text-center">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+          Feedback can only be submitted after hiring and using this agent
+        </span>
       </div>
 
       {/* Feedback List */}
@@ -651,7 +688,7 @@ function FeedbackSection({ agent }: { agent: Agent }) {
       {!loadingFeedback && feedbacks.length === 0 && (
         <div className="border border-border p-5 relative text-center">
           <CornerBrackets />
-          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/40">No feedback yet — be the first to review this agent</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/40">No feedback yet</span>
         </div>
       )}
     </div>
@@ -678,7 +715,7 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
   )
 }
 
-function VerificationSection({ agent }: { agent: Agent }) {
+function VerificationSection({ agent, isOwner }: { agent: Agent; isOwner: boolean }) {
   const { signedFetch } = useWallet()
   const [verification, setVerification] = useState<VerificationResult | null>(null)
   const [loading, setLoading] = useState(true)
@@ -715,20 +752,21 @@ function VerificationSection({ agent }: { agent: Agent }) {
       <CornerBrackets />
       <div className="flex items-center justify-between mb-4">
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">ERC-8126 Verification</span>
-        <button
-          onClick={handleVerify}
-          disabled={verifying || !agent.agentId || agent.agentId === "pending"}
-          className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1.5 hover:border-foreground/30 hover:text-foreground transition-colors text-muted-foreground disabled:opacity-30"
-        >
-          {verifying ? "Verifying..." : verification ? "Re-verify" : "Verify Now"}
-        </button>
+        {isOwner && (
+          <button
+            onClick={handleVerify}
+            disabled={verifying || !agent.agentId || agent.agentId === "pending"}
+            className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1.5 hover:border-foreground/30 hover:text-foreground transition-colors text-muted-foreground disabled:opacity-30"
+          >
+            {verifying ? "Verifying..." : verification ? "Re-verify" : "Verify Now"}
+          </button>
+        )}
       </div>
 
       {loading ? (
         <div className="h-20 bg-muted-foreground/5 animate-pulse" />
       ) : verification ? (
         <div className="space-y-4">
-          {/* Overall Score + Tier */}
           <div className="grid grid-cols-3 gap-4">
             <div className="border border-border p-4 text-center">
               <span className="font-mono text-2xl font-bold text-foreground block">{verification.overallScore}</span>
@@ -739,19 +777,18 @@ function VerificationSection({ agent }: { agent: Agent }) {
                 "font-mono text-sm font-bold block px-2 py-1 border",
                 TIER_STYLES[verification.riskTier] || "border-border text-muted-foreground"
               )}>
-                {verification.riskTier}
+                {verificationLabel(verification.overallScore)}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-1 block">Risk Tier</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-1 block">Status</span>
             </div>
             <div className="border border-border p-4 text-center">
               <span className="font-mono text-sm text-foreground block">
-                {verification.verifiedAt ? new Date(verification.verifiedAt).toLocaleDateString() : "—"}
+                {verification.verifiedAt ? new Date(verification.verifiedAt).toLocaleDateString() : "\u2014"}
               </span>
               <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-1 block">Last Verified</span>
             </div>
           </div>
 
-          {/* Individual Proof Scores */}
           {verification.proofs && verification.proofs.length > 0 && (
             <div className="space-y-3">
               {verification.proofs.map((proof, i) => (
@@ -773,7 +810,7 @@ function VerificationSection({ agent }: { agent: Agent }) {
       ) : (
         <div className="text-center py-4">
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground/40">
-            Not yet verified — click &quot;Verify Now&quot; to run ERC-8126 checks
+            {isOwner ? 'Not yet verified \u2014 click "Verify Now" to run ERC-8126 checks' : "Not yet verified"}
           </span>
         </div>
       )}
