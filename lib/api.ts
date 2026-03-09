@@ -26,6 +26,10 @@ async function get(path: string, fetchFn?: FetchFn | null) {
   return data
 }
 
+export async function apiCheckEndpoint(url: string, protocol: 'MCP' | 'A2A'): Promise<{ status: string; detail: string }> {
+  return post('/api/agents/check-endpoint', { url, protocol })
+}
+
 export async function apiCheckAgent(name?: string, url?: string): Promise<{ nameTaken: boolean; urlTaken: boolean }> {
   const params = new URLSearchParams()
   if (name) params.set('name', name)

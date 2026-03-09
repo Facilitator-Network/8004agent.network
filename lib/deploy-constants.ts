@@ -13,6 +13,17 @@ export const CONTRACTS: Record<string, {
   verificationRegistry: string
   facinetNetwork: string
 }> = {
+  fuji: {
+    name: 'Avalanche Fuji',
+    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
+    chainId: 43113,
+    chainIdHex: '0xa869',
+    blockExplorer: 'https://testnet.snowtrace.io',
+    identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
+    reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+    verificationRegistry: '0x82b50Dd0729D1b109522f6b4D9B13Aa438aF63D0',
+    facinetNetwork: 'avalanche-fuji',
+  },
   sepolia: {
     name: 'Ethereum Sepolia',
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
@@ -35,17 +46,6 @@ export const CONTRACTS: Record<string, {
     verificationRegistry: '0x817FCea8d1AcdABe280A39F31feAaf635D740491',
     facinetNetwork: 'base-sepolia',
   },
-  fuji: {
-    name: 'Avalanche Fuji',
-    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
-    chainId: 43113,
-    chainIdHex: '0xa869',
-    blockExplorer: 'https://testnet.snowtrace.io',
-    identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
-    reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
-    verificationRegistry: '0x82b50Dd0729D1b109522f6b4D9B13Aa438aF63D0',
-    facinetNetwork: 'avalanche-fuji',
-  },
   arbitrumSepolia: {
     name: 'Arbitrum Sepolia',
     rpc: 'https://sepolia-rollup.arbitrum.io/rpc',
@@ -56,17 +56,6 @@ export const CONTRACTS: Record<string, {
     reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
     verificationRegistry: '0x388166fb3B38aFa179B76444d742A329b78B4FF4',
     facinetNetwork: 'arbitrum-sepolia',
-  },
-  monadTestnet: {
-    name: 'Monad Testnet',
-    rpc: 'https://testnet-rpc.monad.xyz',
-    chainId: 10143,
-    chainIdHex: '0x279f',
-    blockExplorer: 'https://testnet.monadexplorer.com',
-    identityRegistry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
-    reputationRegistry: '0x8004B663056A597Dffe9eCcC1965A193B7388713',
-    verificationRegistry: '0x6166809DCFaD786C0f18d8d97be3729b83cb2775',
-    facinetNetwork: 'monad-testnet',
   },
 }
 
@@ -307,7 +296,6 @@ export const CHAIN_USDC: Record<string, string> = {
   baseSepolia: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   fuji: '0x5425890298aed601595a70AB815c96711a31Bc65',
   arbitrumSepolia: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-  monadTestnet: '0x534b2f3A21130d7a60830c2Df862319e593943A3',
 }
 
 // ---- Payment chains available for hire (CCTP-supported + direct Fuji) ----

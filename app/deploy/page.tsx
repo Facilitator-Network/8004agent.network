@@ -19,6 +19,7 @@ import {
 } from "@/lib/deploy-constants"
 import {
   apiCheckAgent,
+  apiCheckEndpoint,
   apiCreateCircleWallet,
   apiStoreAgent,
   apiVerifyAgent,
@@ -326,42 +327,12 @@ function EndpointStatus({ url, protocol }: { url: string; protocol: "MCP" | "A2A
     setStatus("checking")
     timerRef.current = setTimeout(async () => {
       try {
-        const payload = protocol === "A2A"
-          ? { jsonrpc: "2.0", method: "agent/info", id: 1 }
-          : { jsonrpc: "2.0", method: "tools/list", id: 1 }
-
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 5000)
-
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        })
-        clearTimeout(timeout)
-
-        if (res.ok) {
-          try {
-            const body = await res.json()
-            if (body.result !== undefined || body.jsonrpc || body.error) {
-              setStatus("ok")
-              setDetail(`Responding to ${protocol} protocol`)
-            } else {
-              setStatus("partial")
-              setDetail("Reachable but not responding to protocol")
-            }
-          } catch {
-            setStatus("partial")
-            setDetail("Reachable but response is not JSON")
-          }
-        } else {
-          setStatus("partial")
-          setDetail(`Reachable (HTTP ${res.status}) but not 2xx`)
-        }
+        const result = await apiCheckEndpoint(url, protocol)
+        setStatus(result.status as "ok" | "partial" | "error")
+        setDetail(result.detail)
       } catch {
         setStatus("error")
-        setDetail("Unreachable or CORS blocked")
+        setDetail("Failed to check endpoint")
       }
     }, 1500)
 
@@ -671,11 +642,6 @@ interface ProcessingProps {
   onComplete: () => void
 }
 
-interface LogEntry {
-  message: string
-  status: 'pending' | 'running' | 'done' | 'error'
-}
-
 /** Parse agentId from a register() transaction receipt */
 async function parseAgentIdFromTx(txHash: string, rpcUrl: string): Promise<string | null> {
   const provider = new ethers.JsonRpcProvider(rpcUrl)
@@ -696,25 +662,17 @@ async function parseAgentIdFromTx(txHash: string, rpcUrl: string): Promise<strin
 }
 
 function StepProcessing({ form, walletAddress, signer, setResult, setError, onComplete }: ProcessingProps) {
-  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [phase, setPhase] = useState<'signing' | 'wallet' | 'deploying' | 'done' | 'error'>('signing')
+  const [networkStatus, setNetworkStatus] = useState<Record<string, 'pending' | 'deploying' | 'done' | 'error'>>(() => {
+    const init: Record<string, 'pending' | 'deploying' | 'done' | 'error'> = {}
+    for (const key of Object.keys(CONTRACTS)) init[key] = 'pending'
+    return init
+  })
+  const [errorMsg, setErrorMsg] = useState('')
   const startedRef = useRef(false)
 
-  const addLog = useCallback((message: string, status: LogEntry['status'] = 'running') => {
-    setLogs(prev => [...prev, { message, status }])
-  }, [])
-
-  const updateLastLog = useCallback((status: LogEntry['status'], message?: string) => {
-    setLogs(prev => {
-      const next = [...prev]
-      if (next.length > 0) {
-        next[next.length - 1] = {
-          ...next[next.length - 1],
-          status,
-          ...(message ? { message } : {}),
-        }
-      }
-      return next
-    })
+  const updateNet = useCallback((key: string, status: 'pending' | 'deploying' | 'done' | 'error') => {
+    setNetworkStatus(prev => ({ ...prev, [key]: status }))
   }, [])
 
   useEffect(() => {
@@ -735,29 +693,25 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
       if (!signer) throw new Error('Wallet not connected')
 
       // ---- 1. Sign ownership message ----
-      addLog('Requesting ownership signature...')
+      setPhase('signing')
       const timestamp = Math.floor(Date.now() / 1000)
       const ownershipMessage = `I am registering agent "${form.name}" at ${form.url} as owner ${walletAddress} on 8004agent.network\n\nTimestamp: ${timestamp}`
       await signer.signMessage(ownershipMessage)
-      updateLastLog('done', 'Ownership verified!')
 
       // ---- 2. Create Circle Wallet ----
-      addLog('Creating Circle Agent Wallet...')
+      setPhase('wallet')
       try {
         const circleResult = await apiCreateCircleWallet('pending')
         deployResult.agentWalletAddress = circleResult.address || null
         deployResult.circleWalletId = circleResult.walletId || null
-        updateLastLog('done', `Wallet: ${circleResult.address?.slice(0, 10)}...`)
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e)
-        updateLastLog('error', `Wallet skipped: ${msg}`)
-      }
+      } catch { /* non-fatal */ }
 
       // ---- 3. Build skills/domains ----
       const allSkills = [...form.skills, ...form.customSkills.split(',').map(s => s.trim()).filter(Boolean)]
       const allDomains = [...form.domains, ...form.customDomains.split(',').map(d => d.trim()).filter(Boolean)]
 
-      // ---- 4. Register on all networks via Facinet ----
+      // ---- 4. Register on all networks via Facinet (Fuji first) ----
+      setPhase('deploying')
       const networks = Object.keys(CONTRACTS)
       for (const netKey of networks) {
         const netConfig = CONTRACTS[netKey]
@@ -771,16 +725,11 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
           blockExplorer: netConfig.blockExplorer,
         }
 
+        updateNet(netKey, 'deploying')
+
         try {
           const facConfig = { network: netConfig.facinetNetwork, chainId: netConfig.chainId }
-
-          // -- Select ONE facilitator for this network (used for all calls) --
-          addLog(`Selecting facilitator on ${netConfig.name}...`)
           const facilitator = await selectFacilitator(facConfig)
-          updateLastLog('done', `${netConfig.name}: Using ${facilitator.name}`)
-
-          // -- Register via Facinet executeContract --
-          addLog(`Registering on ${netConfig.name} via Facinet...`)
 
           const regResult = await facinetExecuteContract(facConfig, {
             contractAddress: netConfig.identityRegistry as `0x${string}`,
@@ -790,25 +739,13 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
           }, facilitator)
 
           netResult.registrationTx = regResult.txHash
-          updateLastLog('done', `${netConfig.name}: Tx ${regResult.txHash.slice(0, 14)}...`)
 
-          // -- Parse agentId from transaction receipt --
-          addLog(`Parsing agent ID on ${netConfig.name}...`)
           try {
             const agentId = await parseAgentIdFromTx(regResult.txHash, netConfig.rpc)
             netResult.agentId = agentId
-            if (agentId) {
-              updateLastLog('done', `${netConfig.name}: Agent #${agentId}`)
-            } else {
-              updateLastLog('done', `${netConfig.name}: Registered (ID pending)`)
-            }
-          } catch {
-            updateLastLog('done', `${netConfig.name}: Registered (ID will resolve)`)
-          }
+          } catch { /* ID will resolve later */ }
 
-          // -- Transfer NFT to owner via Facinet --
           if (netResult.agentId) {
-            addLog(`Transferring NFT #${netResult.agentId} to owner on ${netConfig.name}...`)
             try {
               const transferResult = await facinetExecuteContract(facConfig, {
                 contractAddress: netConfig.identityRegistry as `0x${string}`,
@@ -817,14 +754,9 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
                 abi: IDENTITY_REGISTRY_ABI,
               }, facilitator)
               netResult.transferTx = transferResult.txHash
-              updateLastLog('done', `NFT transferred on ${netConfig.name}`)
-            } catch (e: unknown) {
-              const msg = e instanceof Error ? e.message : String(e)
-              updateLastLog('error', `NFT transfer pending: ${msg}`)
-            }
+            } catch { /* non-fatal */ }
           }
 
-          // -- Store in Upstash --
           try {
             await apiStoreAgent({
               agentId: netResult.agentId || 'pending',
@@ -853,64 +785,84 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
             })
           } catch { /* non-fatal */ }
 
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e)
-          updateLastLog('error', `${netConfig.name} failed: ${msg}`)
+          updateNet(netKey, 'done')
+        } catch {
+          updateNet(netKey, 'error')
         }
 
         deployResult.networkResults.push(netResult)
       }
 
-      // ---- 5. Done ----
-      addLog('Registration complete!')
-      updateLastLog('done')
+      setPhase('done')
       setResult(deployResult)
       setTimeout(() => onComplete(), 1500)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      updateLastLog('error', msg)
+      setErrorMsg(msg)
+      setPhase('error')
       setError(msg)
       setResult(deployResult)
       setTimeout(() => onComplete(), 2000)
     }
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <SectionHeader step="Step 06" title="Deploying..." />
+  const statusIcon = (s: 'pending' | 'deploying' | 'done' | 'error') => {
+    if (s === 'done') return <span className="h-2 w-2 rounded-full bg-system-green shrink-0" />
+    if (s === 'deploying') return <span className="h-2 w-2 rounded-full bg-info-blue animate-pulse shrink-0" />
+    if (s === 'error') return <span className="h-2 w-2 rounded-full bg-error-red shrink-0" />
+    return <span className="h-2 w-2 rounded-full bg-muted-foreground/20 shrink-0" />
+  }
 
-      <div className="border border-border p-5 relative min-h-[300px]">
+  const statusLabel = (s: 'pending' | 'deploying' | 'done' | 'error') => {
+    if (s === 'done') return 'REGISTERED'
+    if (s === 'deploying') return 'DEPLOYING...'
+    if (s === 'error') return 'FAILED'
+    return 'PENDING'
+  }
+
+  return (
+    <div className="flex flex-col gap-6 items-center">
+      <SectionHeader step="Step 06" title="Deploying Your Agent" />
+
+      {/* Phase indicator */}
+      <div className="w-full text-center">
+        <span className={cn(
+          "font-mono text-xs uppercase tracking-widest",
+          phase === 'error' ? "text-error-red" : "text-muted-foreground"
+        )}>
+          {phase === 'signing' && 'Requesting ownership signature...'}
+          {phase === 'wallet' && 'Setting up agent wallet...'}
+          {phase === 'deploying' && 'Registering on networks...'}
+          {phase === 'done' && 'All networks registered!'}
+          {phase === 'error' && errorMsg}
+        </span>
+      </div>
+
+      {/* Network list */}
+      <div className="w-full border border-border p-6 relative">
         <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-foreground/20" />
         <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-foreground/20" />
         <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-foreground/20" />
         <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-foreground/20" />
 
-        <div className="space-y-2 font-mono text-xs">
-          {logs.map((log, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <span className={cn(
-                "shrink-0 mt-0.5",
-                log.status === 'running' && "text-info-blue animate-pulse",
-                log.status === 'done' && "text-system-green",
-                log.status === 'error' && "text-error-red",
-                log.status === 'pending' && "text-muted-foreground/40",
-              )}>
-                {log.status === 'running' ? '>' : log.status === 'done' ? '+' : log.status === 'error' ? 'x' : '-'}
+        <div className="space-y-4">
+          {Object.entries(CONTRACTS).map(([key, config]) => (
+            <div key={key} className="flex items-center gap-4">
+              {statusIcon(networkStatus[key])}
+              <span className="font-mono text-sm uppercase tracking-wider text-foreground flex-1">
+                {config.name}
               </span>
               <span className={cn(
-                "break-all",
-                log.status === 'error' && "text-error-red",
-                log.status === 'done' && "text-foreground/80",
-                log.status === 'running' && "text-foreground",
-                log.status === 'pending' && "text-muted-foreground/40",
+                "font-mono text-[10px] uppercase tracking-widest",
+                networkStatus[key] === 'done' && "text-system-green",
+                networkStatus[key] === 'deploying' && "text-info-blue",
+                networkStatus[key] === 'error' && "text-error-red",
+                networkStatus[key] === 'pending' && "text-muted-foreground/40",
               )}>
-                {log.message}
+                {statusLabel(networkStatus[key])}
               </span>
             </div>
           ))}
-          {logs.length > 0 && logs[logs.length - 1].status === 'running' && (
-            <span className="text-muted-foreground/40 animate-pulse">_</span>
-          )}
         </div>
       </div>
     </div>
@@ -927,14 +879,17 @@ function StepSuccess({ result, error, form }: { result: DeployResult | null; err
   if (!result) return null
 
   const hasSuccess = result.networkResults.some(r => r.registrationTx !== null)
-  const firstSuccess = result.networkResults.find(r => r.registrationTx !== null)
+  // Use Fuji as primary verification network
+  const fujiResult = result.networkResults.find(r => r.networkKey === 'fuji' && r.registrationTx !== null)
+  const firstSuccess = fujiResult || result.networkResults.find(r => r.registrationTx !== null)
 
   async function handleVerify() {
     if (!firstSuccess?.agentId) return
     setVerifying(true)
     setVerifyError(null)
     try {
-      const vr = await apiVerifyAgent(firstSuccess.network, firstSuccess.agentId, signedFetch)
+      // Always verify on Fuji
+      const vr = await apiVerifyAgent('fuji', firstSuccess.agentId, signedFetch)
       setVerifyResult(vr)
     } catch (e: unknown) {
       setVerifyError(e instanceof Error ? e.message : String(e))

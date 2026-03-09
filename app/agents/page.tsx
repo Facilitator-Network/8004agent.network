@@ -56,7 +56,6 @@ const CHAIN_SHORT: Record<string, string> = {
   baseSepolia: "BASE",
   fuji: "AVAX",
   arbitrumSepolia: "ARB",
-  monadTestnet: "MON",
 }
 
 const CHAIN_COLOR: Record<string, string> = {
@@ -64,7 +63,6 @@ const CHAIN_COLOR: Record<string, string> = {
   baseSepolia: "border-cyan-500/40 text-cyan-400",
   fuji: "border-red-500/40 text-red-400",
   arbitrumSepolia: "border-sky-500/40 text-sky-400",
-  monadTestnet: "border-purple-500/40 text-purple-400",
 }
 
 // ---- Grouping ----
@@ -322,9 +320,18 @@ function VerificationBadge({ network, agentId }: { network: string; agentId: str
 
   useEffect(() => {
     if (!agentId || agentId === "pending") return
-    apiGetVerification(network, agentId)
+    // Always check verification on Fuji (primary verification network)
+    const verifyNetwork = network === "fuji" ? "fuji" : "fuji"
+    apiGetVerification(verifyNetwork, agentId)
       .then((v) => { if (v && v.riskTier) setVerification(v) })
-      .catch(() => {})
+      .catch(() => {
+        // Fallback: try the agent's own network
+        if (network !== "fuji") {
+          apiGetVerification(network, agentId)
+            .then((v) => { if (v && v.riskTier) setVerification(v) })
+            .catch(() => {})
+        }
+      })
   }, [network, agentId])
 
   if (!verification) return null
@@ -722,22 +729,27 @@ function VerificationSection({ agent, isOwner }: { agent: Agent; isOwner: boolea
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
+  // Use Fuji as primary verification network
+  const verifyNetworkKey = "fuji"
+  const fujiAgent = agent.agentsByNetwork?.["fuji"]
+  const fujiAgentId = fujiAgent?.agentId || agent.agentId
+
   useEffect(() => {
-    if (!agent.agentId || agent.agentId === "pending") {
+    if (!fujiAgentId || fujiAgentId === "pending") {
       setLoading(false)
       return
     }
-    apiGetVerification(agent.network, agent.agentId)
+    apiGetVerification(verifyNetworkKey, fujiAgentId)
       .then((v) => { if (v && v.riskTier) setVerification(v) })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [agent.network, agent.agentId])
+  }, [fujiAgentId])
 
   async function handleVerify() {
     setVerifying(true)
     setVerifyError(null)
     try {
-      const result = await apiVerifyAgent(agent.network, agent.agentId, signedFetch)
+      const result = await apiVerifyAgent(verifyNetworkKey, fujiAgentId, signedFetch)
       setVerification(result)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -755,7 +767,7 @@ function VerificationSection({ agent, isOwner }: { agent: Agent; isOwner: boolea
         {isOwner && (
           <button
             onClick={handleVerify}
-            disabled={verifying || !agent.agentId || agent.agentId === "pending"}
+            disabled={verifying || !fujiAgentId || fujiAgentId === "pending"}
             className="font-mono text-[10px] uppercase tracking-widest border border-border px-3 py-1.5 hover:border-foreground/30 hover:text-foreground transition-colors text-muted-foreground disabled:opacity-30"
           >
             {verifying ? "Verifying..." : verification ? "Re-verify" : "Verify Now"}
