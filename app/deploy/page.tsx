@@ -46,7 +46,7 @@ export default function DeployPage() {
   const [nameTaken, setNameTaken] = useState(false)
   const [urlTaken, setUrlTaken] = useState(false)
   const [checking, setChecking] = useState(false)
-  const { walletAddress, signer } = useWallet()
+  const { walletAddress, signer, signedFetch } = useWallet()
 
   const updateForm = useCallback((updates: Partial<DeployFormData>) => {
     setForm(prev => ({ ...prev, ...updates }))
@@ -84,7 +84,7 @@ export default function DeployPage() {
               {step === 2 && <StepSkillsDomains form={form} updateForm={updateForm} />}
               {step === 3 && <StepAdvancedConfig form={form} updateForm={updateForm} />}
               {step === 4 && <StepReview form={form} walletAddress={walletAddress} />}
-              {step === 5 && <StepProcessing form={form} walletAddress={walletAddress!} signer={signer} setResult={setResult} setError={setError} onComplete={() => setStep(6)} />}
+              {step === 5 && <StepProcessing form={form} walletAddress={walletAddress!} signer={signer} signedFetch={signedFetch} setResult={setResult} setError={setError} onComplete={() => setStep(6)} />}
               {step === 6 && <StepSuccess result={result} error={error} form={form} />}
             </motion.div>
           </AnimatePresence>
@@ -633,10 +633,13 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 // ---- Step 5: Processing ----
+type SignedFetchFn = (input: RequestInfo, init?: RequestInit) => Promise<Response>
+
 interface ProcessingProps {
   form: DeployFormData
   walletAddress: string
   signer: import("ethers").JsonRpcSigner | null
+  signedFetch: SignedFetchFn | null
   setResult: (r: DeployResult) => void
   setError: (e: string | null) => void
   onComplete: () => void
@@ -661,7 +664,7 @@ async function parseAgentIdFromTx(txHash: string, rpcUrl: string): Promise<strin
   return null
 }
 
-function StepProcessing({ form, walletAddress, signer, setResult, setError, onComplete }: ProcessingProps) {
+function StepProcessing({ form, walletAddress, signer, signedFetch, setResult, setError, onComplete }: ProcessingProps) {
   const [phase, setPhase] = useState<'signing' | 'wallet' | 'deploying' | 'done' | 'error'>('signing')
   const [networkStatus, setNetworkStatus] = useState<Record<string, 'pending' | 'deploying' | 'done' | 'error'>>(() => {
     const init: Record<string, 'pending' | 'deploying' | 'done' | 'error'> = {}
@@ -782,7 +785,7 @@ function StepProcessing({ form, walletAddress, signer, setResult, setError, onCo
               registeredAt: new Date().toISOString(),
               agentWalletAddress: deployResult.agentWalletAddress || '',
               circleWalletId: deployResult.circleWalletId || '',
-            })
+            }, signedFetch)
           } catch { /* non-fatal */ }
 
           updateNet(netKey, 'done')
