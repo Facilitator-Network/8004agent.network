@@ -315,24 +315,27 @@ function verificationLabel(score: number): string {
   return `RISK ${score}`
 }
 
-function VerificationBadge({ network, agentId }: { network: string; agentId: string }) {
+function VerificationBadge({ agent }: { agent: GroupedAgent }) {
   const [verification, setVerification] = useState<VerificationResult | null>(null)
 
+  // Use Fuji agentId if available, otherwise fall back to the agent's primary network
+  const fujiAgent = agent.agentsByNetwork?.["fuji"]
+  const verifyNetwork = fujiAgent ? "fuji" : agent.network
+  const verifyAgentId = fujiAgent?.agentId || agent.agentId
+
   useEffect(() => {
-    if (!agentId || agentId === "pending") return
-    // Always check verification on Fuji (primary verification network)
-    const verifyNetwork = network === "fuji" ? "fuji" : "fuji"
-    apiGetVerification(verifyNetwork, agentId)
+    if (!verifyAgentId || verifyAgentId === "pending") return
+    apiGetVerification(verifyNetwork, verifyAgentId)
       .then((v) => { if (v && v.riskTier) setVerification(v) })
       .catch(() => {
         // Fallback: try the agent's own network
-        if (network !== "fuji") {
-          apiGetVerification(network, agentId)
+        if (verifyNetwork !== agent.network) {
+          apiGetVerification(agent.network, agent.agentId)
             .then((v) => { if (v && v.riskTier) setVerification(v) })
             .catch(() => {})
         }
       })
-  }, [network, agentId])
+  }, [verifyNetwork, verifyAgentId, agent.network, agent.agentId])
 
   if (!verification) return null
 
@@ -370,7 +373,7 @@ function AgentCard({ agent, onClick }: { agent: GroupedAgent; onClick: () => voi
           <span className={cn("h-2 w-2 rounded-full shrink-0", isActive ? "bg-system-green" : "bg-error-red")} />
           <span className="font-mono text-sm font-bold uppercase tracking-wider text-foreground truncate">{agent.name}</span>
           {agent.agentId && agent.agentId !== "pending" && <span className="font-mono text-[10px] text-muted-foreground/60 shrink-0">#{agent.agentId}</span>}
-          <VerificationBadge network={agent.network} agentId={agent.agentId} />
+          <VerificationBadge agent={agent} />
         </div>
 
         {/* Chain logos row */}
@@ -538,7 +541,7 @@ function AgentDetail({ agent, onBack }: { agent: GroupedAgent; onBack: () => voi
       )}
 
       {/* ERC-8126 Verification */}
-      <VerificationSection agent={agent} isOwner={!!walletAddress && agent.ownerAddress?.toLowerCase() === walletAddress.toLowerCase()} />
+      <VerificationSection agent={agent as GroupedAgent} isOwner={!!walletAddress && agent.ownerAddress?.toLowerCase() === walletAddress.toLowerCase()} />
 
       {/* Feedback / Reputation (read-only) */}
       <FeedbackSection agent={agent} />
@@ -722,16 +725,16 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
   )
 }
 
-function VerificationSection({ agent, isOwner }: { agent: Agent; isOwner: boolean }) {
+function VerificationSection({ agent, isOwner }: { agent: GroupedAgent; isOwner: boolean }) {
   const { signedFetch } = useWallet()
   const [verification, setVerification] = useState<VerificationResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [verifying, setVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
-  // Use Fuji as primary verification network
-  const verifyNetworkKey = "fuji"
+  // Use Fuji as primary verification network; fall back to agent's own network
   const fujiAgent = agent.agentsByNetwork?.["fuji"]
+  const verifyNetworkKey = fujiAgent ? "fuji" : agent.network
   const fujiAgentId = fujiAgent?.agentId || agent.agentId
 
   useEffect(() => {
