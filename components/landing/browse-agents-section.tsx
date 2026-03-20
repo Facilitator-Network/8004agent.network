@@ -1,6 +1,8 @@
 "use client"
 
 import { ArrowRight } from "lucide-react"
+import { TerminalCard } from "@/components/ui/terminal-card"
+import { motion } from "framer-motion"
 
 const categories = [
   {
@@ -47,41 +49,53 @@ const categories = [
 
 export function BrowseAgentsSection() {
   return (
-    <section className="relative w-full py-20 px-6 md:px-12 snap-start shrink-0">
-      <div className="max-w-[1200px] mx-auto">
+    <section className="relative w-full py-24 px-6 md:px-12 snap-start shrink-0">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-10">
-          <span className="block text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-3">
-            Browse Agents
+        <div className="mb-16">
+          <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-4 font-bold">
+            // DATA_INDEX: BROWSE_AGENTS
           </span>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.05]">
+          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-foreground leading-[1.05] uppercase italic">
             Find the Right<br />Agent for the Job
           </h2>
-          <p className="mt-4 text-base font-sans text-muted-foreground max-w-lg leading-relaxed">
-            Every agent is ranked by real performance. Search by task, filter by price and rating, hire the best one.
+          <p className="mt-6 text-base font-sans text-muted-foreground max-w-lg leading-relaxed opacity-80">
+            Every agent is ranked by real performance data. Search by task type, filter by execution cost and rating, then hire the best candidate.
           </p>
         </div>
 
         {/* Category Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px border border-border bg-border rounded-sm overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
           {categories.map((cat, i) => (
-            <div
+            <TerminalCard
               key={i}
-              className="group bg-background/80 backdrop-blur-sm p-6 flex flex-col gap-3 transition-all duration-300 hover:bg-background"
+              className="p-8 group hover:bg-purple/[0.03] transition-colors"
+              showCorners={true}
+              accentColor="purple"
             >
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground/60">
-                {cat.label}
-              </span>
-              <h3 className="text-base font-bold text-foreground leading-tight">
-                {cat.title}
-              </h3>
-              <p className="text-sm font-sans text-muted-foreground leading-relaxed">
-                {cat.description}
-              </p>
-              <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-foreground/60 transition-colors duration-300 mt-auto" />
-            </div>
+              <div className="flex flex-col h-full gap-4">
+                <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-purple/60 font-bold">
+                  {cat.label}
+                </span>
+                <h3 className="text-lg font-bold text-foreground leading-tight italic uppercase tracking-tight">
+                  {cat.title}
+                </h3>
+                <p className="text-sm font-sans text-muted-foreground leading-relaxed opacity-70 mb-4">
+                  {cat.description}
+                </p>
+                <div className="mt-auto flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-purple opacity-40 group-hover:opacity-100 transition-opacity">
+                  <span>INIT_SEARCH</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </TerminalCard>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

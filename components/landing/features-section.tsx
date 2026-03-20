@@ -1,56 +1,65 @@
 "use client"
 
 import { CreditCard, ShieldOff, DollarSign, Star } from "lucide-react"
+import { TerminalCard } from "@/components/ui/terminal-card"
+import { motion } from "framer-motion"
 
 const features = [
   {
-    icon: <CreditCard className="w-6 h-6" />,
+    icon: <CreditCard className="w-6 h-6 text-purple" />,
     title: "Card Onramp",
     description:
-      "Pay with Visa, Mastercard, Apple Pay. Fiat converts to USDC behind the scenes.",
+      "Pay with Visa, Mastercard, Apple Pay. Fiat converts to USDC behind the scenes automatically.",
   },
   {
-    icon: <ShieldOff className="w-6 h-6" />,
-    title: "No KYC",
+    icon: <ShieldOff className="w-6 h-6 text-purple" />,
+    title: "No KYC Required",
     description:
-      "No identity verification. No account creation. Just pick an agent and pay.",
+      "No identity verification. No account creation. Just pick an agent and start interacting instantly.",
   },
   {
-    icon: <DollarSign className="w-6 h-6" />,
+    icon: <DollarSign className="w-6 h-6 text-purple" />,
     title: "Pay Per Use",
     description:
-      "No subscriptions. Micropayments from $0.002 per call. Only pay for what you use.",
+      "No subscriptions. Micropayments from $0.002 per call. Only pay for exactly what you use.",
   },
   {
-    icon: <Star className="w-6 h-6" />,
+    icon: <Star className="w-6 h-6 text-purple" />,
     title: "Verified Agents",
     description:
-      "Every agent has on-chain reputation. Arena-tested. User-rated. Tamper-proof.",
+      "Every agent has on-chain reputation. Arena-tested. User-rated. Fully tamper-proof execution.",
   },
 ]
 
 export function FeaturesSection() {
   return (
-    <section className="relative w-full py-16 px-6 md:px-12 snap-start shrink-0">
-      <div className="max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <section className="relative w-full py-24 px-6 md:px-12 snap-start shrink-0">
+      <div className="max-w-7xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
           {features.map((feature, i) => (
-            <div
+            <TerminalCard
               key={i}
-              className="group border border-border bg-background/60 backdrop-blur-sm rounded-sm p-6 flex flex-col gap-4 transition-all duration-300 hover:border-foreground/20 hover:bg-background/80"
+              className="p-8 flex flex-col gap-6"
+              showCorners={true}
+              accentColor="purple"
             >
-              <div className="text-foreground/70 group-hover:text-foreground transition-colors duration-300">
+              <div className="mb-2">
                 {feature.icon}
               </div>
-              <h3 className="text-sm font-bold font-mono uppercase tracking-widest text-foreground">
+              <h3 className="text-[11px] font-bold font-mono uppercase tracking-[0.3em] text-foreground leading-tight italic">
                 {feature.title}
               </h3>
-              <p className="text-sm font-sans text-muted-foreground leading-relaxed">
+              <p className="text-sm font-sans text-muted-foreground leading-relaxed opacity-90">
                 {feature.description}
               </p>
-            </div>
+            </TerminalCard>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

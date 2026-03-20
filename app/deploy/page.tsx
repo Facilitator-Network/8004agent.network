@@ -8,6 +8,8 @@ import { useTheme } from "@/components/theme-provider"
 import PixelBlast from "@/components/ui/pixel-blast"
 import { ethers } from "ethers"
 import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
+import { TerminalCard } from "@/components/ui/terminal-card"
+import { GlassButton } from "@/components/ui/glass-button"
 import {
   OASF_SKILLS,
   APPLICATION_DOMAINS,
@@ -138,27 +140,23 @@ export default function DeployPage() {
                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                 className="flex flex-col md:flex-row items-center gap-6"
               >
-                <button
-                  onClick={() => setShowLanding(false)}
-                  className="group relative flex items-center justify-center gap-3 font-mono text-sm uppercase tracking-[0.2em] bg-foreground text-background px-10 py-4 overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all active:scale-95"
-                >
-                  <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                  <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <GlassButton
+                    variant="primary"
+                    size="md"
+                    onClick={() => setShowLanding(false)}
+                    className="group"
+                  >
                     <span className="h-2 w-2 rounded-full bg-purple group-hover:bg-white shrink-0" />
                     Initialize UI Flow
-                  </span>
-                  {/* Scanline Effect */}
-                  <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity" />
-                </button>
-                <a
-                  href="/docs"
-                  className="group relative flex items-center gap-3 font-mono text-sm uppercase tracking-[0.2em] border border-purple/30 bg-purple/5 backdrop-blur-md text-foreground px-10 py-4 hover:bg-purple/10 transition-all hover:gap-5 overflow-hidden active:scale-95"
-                >
-                  <span className="relative z-10">Fetch SDK Docs</span>
-                  <span className="text-purple relative z-10">&rarr;</span>
-                  {/* Glass Shimmer */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </a>
+                  </GlassButton>
+                  <a href="/docs">
+                    <GlassButton variant="secondary" size="md" className="group">
+                      Fetch SDK Docs
+                      <span className="text-purple group-hover:text-white transition-all">&rarr;</span>
+                    </GlassButton>
+                  </a>
+                </div>
               </motion.div>
             </div>
 
@@ -200,14 +198,18 @@ export default function DeployPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Path A: UI (Bento Large) */}
-                <div className="md:col-span-7 group relative flex flex-col bg-background/20 backdrop-blur-2xl border border-purple/20 hover:border-purple/50 transition-all duration-500 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                <TerminalCard
+                  className="md:col-span-7 p-8 md:p-12 min-h-[500px]"
+                  showCorners={true}
+                  accentColor="purple"
+                >
                   <div className="absolute top-0 right-0 p-4 opacity-10 font-mono text-[60px] select-none leading-none">01</div>
-                  <div className="p-8 md:p-12 flex flex-col h-full relative z-10">
+                  <div className="flex flex-col h-full relative z-10">
                     <div className="flex items-center gap-3 mb-8">
-                      <span className="px-3 py-1 bg-purple/10 text-purple text-[9px] font-mono uppercase tracking-widest border border-purple/20">NO_CODE_READY</span>
+                      <span className="px-3 py-1 bg-purple/10 text-purple text-[9px] font-mono uppercase tracking-widest border border-purple/20 font-bold">// NO_CODE_READY</span>
                     </div>
-                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Visual Dashboard</h3>
-                    <p className="text-base font-mono text-muted-foreground leading-relaxed mb-12 max-w-md opacity-80">
+                    <h3 className="text-4xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Visual Dashboard</h3>
+                    <p className="text-base font-sans text-muted-foreground leading-relaxed mb-12 max-w-md opacity-80">
                       Already have an agent? Link it via URL. We handle the identity, payments, and routing. Zero code modification required.
                     </p>
                     
@@ -219,59 +221,56 @@ export default function DeployPage() {
                         { label: "CHAIN_SUPPORT", val: "MULTI_CHAIN" },
                       ].map(item => (
                         <div key={item.label} className="flex flex-col border-l border-purple/20 pl-4">
-                          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">{item.label}</span>
+                          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1 font-bold">{item.label}</span>
                           <span className="text-sm font-bold text-foreground font-mono">{item.val}</span>
                         </div>
                       ))}
                     </div>
 
-                    <button
+                    <GlassButton
+                      variant="primary"
+                      size="sm"
                       onClick={() => setShowLanding(false)}
-                      className="group relative mt-auto self-start flex items-center justify-center gap-3 font-mono text-[11px] uppercase tracking-widest bg-foreground text-background px-8 py-3 overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)] hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all active:scale-95"
+                      className="mt-auto self-start"
                     >
-                      <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                      <span className="relative z-10 group-hover:text-white transition-colors">INITIALIZE_DASHBOARD_FLOW &rarr;</span>
-                    </button>
+                      INITIALIZE_DASHBOARD_FLOW &rarr;
+                    </GlassButton>
                   </div>
-                  {/* Corner accents */}
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-purple group-hover:w-8 group-hover:h-8 transition-all" />
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-purple group-hover:w-8 group-hover:h-8 transition-all" />
-                </div>
+                </TerminalCard>
 
                 {/* Path B: SDK (Bento Small) */}
-                <div className="md:col-span-5 group relative flex flex-col bg-background/20 backdrop-blur-2xl border border-border hover:border-amber-500/50 transition-all duration-500 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                <TerminalCard
+                  className="md:col-span-5 p-8 md:p-12 flex flex-col h-full"
+                  showCorners={true}
+                  accentColor="amber"
+                >
                   <div className="absolute top-0 right-0 p-4 opacity-10 font-mono text-[60px] select-none leading-none">02</div>
-                  <div className="p-8 md:p-12 flex flex-col h-full relative z-10">
+                  <div className="flex flex-col h-full relative z-10">
                     <div className="flex items-center gap-3 mb-8">
-                      <span className="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-mono uppercase tracking-widest border border-amber-500/20">FULL_ENGINE_ACCESS</span>
+                      <span className="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-mono uppercase tracking-widest border border-amber-500/20 font-bold">// FULL_ENGINE_ACCESS</span>
                     </div>
-                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Terminal SDK</h3>
-                    <p className="text-base font-mono text-muted-foreground leading-relaxed mb-8 opacity-80">
+                    <h3 className="text-4xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Terminal SDK</h3>
+                    <p className="text-base font-sans text-muted-foreground leading-relaxed mb-8 opacity-80">
                       For engineers building autonomous systems. Programmatic registration and A2A settlement.
                     </p>
 
-                    <div className="bg-black/60 p-6 font-mono text-[11px] leading-relaxed mb-8 border border-white/5 shadow-inner">
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-black/80 dark:bg-black/60 p-6 font-mono text-[11px] leading-relaxed mb-8 border border-amber-500/20 shadow-inner rounded-sm">
+                      <div className="flex items-center gap-2 mb-4">
                         <span className="h-2 w-2 rounded-full bg-red-500/50" />
                         <span className="h-2 w-2 rounded-full bg-amber-500/50" />
                         <span className="h-2 w-2 rounded-full bg-green-500/50" />
                       </div>
-                      <span className="text-purple">npm install</span> a8004/sdk<br/>
-                      <span className="text-purple">8004 deploy</span> --init
+                      <span className="text-purple font-bold">npm install</span> a8004/sdk<br/>
+                      <span className="text-purple font-bold">8004 deploy</span> --init
                     </div>
 
-                    <a
-                      href="/docs"
-                      className="group relative mt-auto self-start flex items-center justify-center gap-3 font-mono text-[11px] uppercase tracking-widest border border-purple/30 bg-purple/5 backdrop-blur-md text-foreground px-8 py-3 overflow-hidden hover:bg-purple/10 transition-all active:scale-95"
-                    >
-                      <span className="relative z-10">READ_API_DOCUMENTATION &rarr;</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    <a href="/docs" className="mt-auto self-start">
+                      <GlassButton variant="secondary" size="sm" className="group border-amber-500/30 text-amber-500 hover:border-amber-500">
+                        READ_API_DOCUMENTATION &rarr;
+                      </GlassButton>
                     </a>
                   </div>
-                  {/* Corner accents */}
-                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-500 group-hover:w-8 group-hover:h-8 transition-all" />
-                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-500 group-hover:w-8 group-hover:h-8 transition-all" />
-                </div>
+                </TerminalCard>
               </div>
             </div>
           </motion.section>
@@ -294,51 +293,66 @@ export default function DeployPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4">
                 {/* Feature 1: Identity (Large Square) */}
-                <div className="md:col-span-2 md:row-span-2 group relative p-10 bg-background/20 backdrop-blur-2xl border border-purple/20 hover:border-purple/50 transition-all overflow-hidden flex flex-col justify-end min-h-[400px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                <TerminalCard
+                  className="md:col-span-2 md:row-span-2 p-10 flex flex-col justify-end min-h-[400px]"
+                  showCorners={true}
+                  accentColor="purple"
+                >
                   <div className="absolute top-8 left-8 text-purple opacity-20"><span className="font-mono text-[80px] leading-none">01</span></div>
                   <div className="relative z-10">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">IDENTITY_LAYER</span>
-                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase italic leading-tight">ERC-8004<br/>On-Chain Registry</h3>
-                    <p className="text-base font-mono text-muted-foreground leading-relaxed opacity-70">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block font-bold">IDENTITY_LAYER</span>
+                    <h3 className="text-4xl font-bold text-foreground mb-4 uppercase italic leading-tight">ERC-8004<br/>On-Chain Registry</h3>
+                    <p className="text-base font-sans text-muted-foreground leading-relaxed opacity-80 max-w-sm">
                       Standardized identity for AI agents. Your registration works across every EVM chain, proving ownership and verified origins cryptographically.
                     </p>
                   </div>
-                  <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple/5 blur-[100px] pointer-events-none group-hover:bg-purple/20 transition-colors" />
-                </div>
+                </TerminalCard>
 
                 {/* Feature 2: Payments (Wide) */}
-                <div className="md:col-span-2 group relative p-10 bg-background/20 backdrop-blur-2xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                  <div className="flex items-center gap-6">
-                    <div className="h-16 w-16 border border-purple/30 bg-purple/5 flex items-center justify-center shrink-0">
-                      <span className="text-purple font-mono text-3xl">$</span>
+                <TerminalCard
+                  className="md:col-span-2 p-10 flex flex-col justify-center"
+                  showCorners={true}
+                  accentColor="purple"
+                >
+                  <div className="flex items-center gap-8">
+                    <div className="h-16 w-16 border border-purple/30 bg-purple/5 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                      <span className="text-purple font-mono text-4xl italic">$</span>
                     </div>
                     <div>
-                      <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-2 block">USDC_SETTLEMENT</span>
-                      <h3 className="text-xl font-bold text-foreground uppercase italic mb-2">Native Monetization</h3>
-                      <p className="text-sm font-mono text-muted-foreground opacity-70">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-2 block font-bold">USDC_SETTLEMENT</span>
+                      <h3 className="text-2xl font-bold text-foreground uppercase italic mb-2 tracking-tight">Native Monetization</h3>
+                      <p className="text-sm font-sans text-muted-foreground opacity-80 leading-relaxed">
                         Collect payments in stablecoins. Gasless for users. Instant settlement for you.
                       </p>
                     </div>
                   </div>
-                </div>
+                </TerminalCard>
 
                 {/* Feature 3: Discovery */}
-                <div className="group relative p-8 bg-background/20 backdrop-blur-xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">MARKETPLACE</span>
-                  <h3 className="text-lg font-bold text-foreground uppercase italic mb-3">Discovery Engine</h3>
-                  <p className="text-sm font-mono text-muted-foreground opacity-70 leading-relaxed">
+                <TerminalCard
+                  className="p-8 flex flex-col"
+                  showCorners={true}
+                  accentColor="purple"
+                >
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block font-bold">MARKETPLACE</span>
+                  <h3 className="text-xl font-bold text-foreground uppercase italic mb-3 tracking-tight">Discovery</h3>
+                  <p className="text-sm font-sans text-muted-foreground opacity-80 leading-relaxed">
                     Auto-listing in the global agent index. Search, filter, and hire.
                   </p>
-                </div>
+                </TerminalCard>
 
                 {/* Feature 4: Reputation */}
-                <div className="group relative p-8 bg-background/20 backdrop-blur-xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">ON_CHAIN_ELO</span>
-                  <h3 className="text-lg font-bold text-foreground uppercase italic mb-3">Trust Graph</h3>
-                  <p className="text-sm font-mono text-muted-foreground opacity-70 leading-relaxed">
+                <TerminalCard
+                  className="p-8 flex flex-col"
+                  showCorners={true}
+                  accentColor="purple"
+                >
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block font-bold">ON_CHAIN_ELO</span>
+                  <h3 className="text-xl font-bold text-foreground uppercase italic mb-3 tracking-tight">Trust Graph</h3>
+                  <p className="text-sm font-sans text-muted-foreground opacity-80 leading-relaxed">
                     Reputation built through actual execution. Battle-tested scores.
                   </p>
-                </div>
+                </TerminalCard>
               </div>
             </div>
           </motion.section>
@@ -362,7 +376,11 @@ export default function DeployPage() {
                 </p>
               </div>
 
-              <div className="md:w-2/3 w-full border border-purple/20 bg-background/20 backdrop-blur-md overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+              <TerminalCard
+                className="md:w-2/3 w-full overflow-hidden"
+                showCorners={true}
+                accentColor="purple"
+              >
                 {[
                   { feature: "Wallet Setup", diy: "MANUAL_KEYS_GEN", us: "EMAIL_AUTH_AUTO", val: "10x_FASTER" },
                   { feature: "Gas Management", diy: "BRIDGE_REFILL_LOOPS", us: "SPONSORED_SUBSIDY", val: "0_FRICTION" },
@@ -371,22 +389,22 @@ export default function DeployPage() {
                   { feature: "Discovery", diy: "BUILD_OWN_MARKETING", us: "NETWORK_LISTING", val: "VISIBILITY" },
                   { feature: "Live Timeline", diy: "~48 HOURS", us: "< 10 MINUTES", val: "INSTANT" },
                 ].map((row, i) => (
-                  <div key={i} className="grid grid-cols-12 border-b border-border/50 hover:bg-foreground/[0.02] transition-colors group">
-                    <div className="col-span-4 p-6 border-r border-border/50 flex flex-col justify-center">
-                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{row.feature}</span>
+                  <div key={i} className="grid grid-cols-12 border-b border-purple/10 last:border-0 hover:bg-purple/[0.02] transition-colors group">
+                    <div className="col-span-4 p-6 border-r border-purple/10 flex flex-col justify-center">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1 opacity-50 font-bold">{row.feature}</span>
                       <span className="text-xs font-bold text-foreground uppercase italic group-hover:text-purple transition-colors">{row.val}</span>
                     </div>
-                    <div className="col-span-4 p-6 border-r border-border/50">
-                      <span className="text-[9px] font-mono text-muted-foreground/40 block mb-2">BUILD_IT_YOURSELF</span>
+                    <div className="col-span-4 p-6 border-r border-purple/10">
+                      <span className="text-[9px] font-mono text-muted-foreground/40 block mb-2 font-bold">// BUILD_IT_YOURSELF</span>
                       <p className="text-[11px] font-mono text-muted-foreground/80 leading-relaxed uppercase">{row.diy}</p>
                     </div>
                     <div className="col-span-4 p-6 bg-purple/5">
-                      <span className="text-[9px] font-mono text-purple/40 block mb-2">FACILITATOR_NETWORK</span>
+                      <span className="text-[9px] font-mono text-purple/40 block mb-2 font-bold">// FACILITATOR_NETWORK</span>
                       <p className="text-[11px] font-mono text-purple font-bold leading-relaxed uppercase">{row.us}</p>
                     </div>
                   </div>
                 ))}
-              </div>
+              </TerminalCard>
             </div>
           </motion.section>
 
@@ -404,13 +422,17 @@ export default function DeployPage() {
                 Pay as you <span className="text-purple">Earn.</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-purple/20 max-w-4xl w-full border border-purple/20 backdrop-blur-2xl">
-                <div className="bg-background/20 p-12 text-left flex flex-col hover:bg-foreground/[0.01] transition-colors shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-muted-foreground mb-4">DEPLOYER_PLAN</span>
+                <TerminalCard
+                  className="p-12 text-left flex flex-col border-none shadow-none"
+                  showCorners={false}
+                  accentColor="purple"
+                >
+                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-purple mb-4 font-bold">// DEPLOYER_PLAN</span>
                   <div className="flex items-baseline gap-2 mb-2">
                     <span className="text-5xl font-extrabold text-foreground italic">5%</span>
-                    <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">FEES</span>
+                    <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest font-bold">FEES</span>
                   </div>
-                  <p className="text-sm font-mono text-muted-foreground mb-12 opacity-80">Free to deploy. We only take a cut when your agent gets paid.</p>
+                  <p className="text-sm font-sans text-muted-foreground mb-12 opacity-80">Free to deploy. We only take a cut when your agent gets paid.</p>
                   <div className="flex flex-col gap-4 mt-auto">
                     {["All Core Features", "Unlimited Agents", "Marketplace Access", "Gasless Ops"].map(f => (
                       <div key={f} className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-foreground">
@@ -418,14 +440,18 @@ export default function DeployPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-                <div className="bg-background/20 p-12 text-left flex flex-col hover:bg-foreground/[0.01] transition-colors relative group shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                </TerminalCard>
+                <TerminalCard
+                  className="p-12 text-left flex flex-col border-none shadow-none"
+                  showCorners={false}
+                  accentColor="purple"
+                >
                   <div className="absolute top-0 right-0 w-24 h-24 bg-purple/10 blur-3xl rounded-full" />
-                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-purple mb-4">ENTERPRISE_FLEET</span>
+                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-purple mb-4 font-bold">// ENTERPRISE_FLEET</span>
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-5xl font-extrabold text-foreground italic">VARIES</span>
+                    <span className="text-5xl font-extrabold text-foreground italic uppercase">Varies</span>
                   </div>
-                  <p className="text-sm font-mono text-muted-foreground mb-12 opacity-80">For high-volume fleets. Custom settlements and lower capped fees.</p>
+                  <p className="text-sm font-sans text-muted-foreground mb-12 opacity-80">For high-volume fleets. Custom settlements and lower capped fees.</p>
                   <div className="flex flex-col gap-4 mt-auto">
                     {["Dedicated Support", "Reduced Fees", "Fiat Payouts", "Audit Logs"].map(f => (
                       <div key={f} className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-foreground">
@@ -433,7 +459,7 @@ export default function DeployPage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </TerminalCard>
               </div>
             </div>
             {/* Background elements */}
@@ -443,29 +469,28 @@ export default function DeployPage() {
 
           {/* ===== FINAL_CALL_TO_ACTION ===== */}
           <motion.section 
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
-            className="py-48 px-6 md:px-12 shrink-0 border-t border-purple/20 bg-foreground/[0.02] relative overflow-hidden snap-start"
+            className="py-64 px-6 md:px-12 shrink-0 border-t border-purple/20 bg-foreground/[0.02] relative overflow-hidden snap-start"
           >
             <div className="max-w-4xl mx-auto text-center relative z-10">
-              <h2 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-foreground leading-[0.85] uppercase mb-12 italic">
+              <h2 className="text-6xl md:text-[8rem] font-extrabold tracking-tighter text-foreground leading-[0.85] uppercase mb-12 italic">
                 Ready to go <span className="text-purple underline underline-offset-8 decoration-4">On-Chain?</span>
               </h2>
               <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                <button
+                <GlassButton
+                  variant="primary"
+                  size="lg"
                   onClick={() => setShowLanding(false)}
-                  className="group relative w-full md:w-auto font-mono text-sm uppercase tracking-[0.4em] bg-foreground text-background px-12 py-5 rounded-none overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] transition-all active:scale-95"
+                  className="w-full md:w-auto min-w-[320px]"
                 >
-                  <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                  <span className="relative z-10 group-hover:text-white transition-colors">[ INITIALIZE_DEPLOY_v1.0 ]</span>
-                  {/* Scanline Effect */}
-                  <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity" />
-                </button>
+                  [ INITIALIZE_DEPLOY_v1.0 ]
+                </GlassButton>
               </div>
             </div>
-            {/* Visual scanline effect */}
+            {/* Visual scanline effect for the section background */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
           </motion.section>
         </div>
