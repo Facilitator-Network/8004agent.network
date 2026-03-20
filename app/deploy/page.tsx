@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useWallet } from "@/components/wallet-provider"
+import { useTheme } from "@/components/theme-provider"
+import PixelBlast from "@/components/ui/pixel-blast"
 import { ethers } from "ethers"
 import { selectFacilitator, facinetExecuteContract } from "@/lib/facinet"
 import {
@@ -39,6 +41,7 @@ const STEPS = [
 const NETWORK_COUNT = Object.keys(CONTRACTS).length
 
 export default function DeployPage() {
+  const [showLanding, setShowLanding] = useState(true)
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<DeployFormData>({ ...DEFAULT_FORM_DATA })
   const [result, setResult] = useState<DeployResult | null>(null)
@@ -46,7 +49,15 @@ export default function DeployPage() {
   const [nameTaken, setNameTaken] = useState(false)
   const [urlTaken, setUrlTaken] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { walletAddress, signer, signedFetch } = useWallet()
+  const { theme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const pixelColor = theme === "light" ? "#5b21b6" : "#B19EEF"
 
   const updateForm = useCallback((updates: Partial<DeployFormData>) => {
     setForm(prev => ({ ...prev, ...updates }))
@@ -65,6 +76,404 @@ export default function DeployPage() {
     }
   }, [step, form, walletAddress, nameTaken, urlTaken, checking])
 
+  // ---- Deploy Landing Page ----
+  if (showLanding) {
+    return (
+      <div className="h-full w-full relative flex flex-col overflow-y-auto no-scrollbar scroll-smooth snap-y snap-proximity">
+        {/* Fixed Background for Landing Only */}
+        <div className="fixed inset-0 z-0 opacity-20 pointer-events-none">
+          {mounted && (
+            <PixelBlast
+              variant="square"
+              pixelSize={2}
+              color={pixelColor}
+              patternScale={8}
+              patternDensity={1.2}
+              enableRipples
+              speed={0.8}
+              edgeFade={0.4}
+              transparent
+            />
+          )}
+        </div>
+
+        <div className="relative z-10">
+          {/* ===== HERO ===== */}
+          <motion.section 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="h-[calc(100vh-80px)] flex flex-col px-6 md:px-12 text-center shrink-0 snap-start"
+          >
+            {/* Centered content */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex items-center gap-2.5 border border-purple/30 bg-purple/5 backdrop-blur-md px-5 py-2 rounded-full text-[10px] font-mono uppercase tracking-[0.2em] text-purple mb-8 relative overflow-hidden group">
+                <span className="h-2 w-2 rounded-full bg-purple shrink-0 animate-pulse" />
+                <span className="relative z-10">System Status: Ready to Deploy</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              </div>
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-6xl md:text-[7rem] font-extrabold tracking-tighter text-foreground leading-[0.85] mb-8 uppercase italic"
+              >
+                Deploy Your<br /><span className="text-purple">Agent.</span>
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+                className="text-base md:text-xl font-mono text-muted-foreground max-w-2xl leading-relaxed mb-12 opacity-80"
+              >
+                [SET_PRICING] [ROUTE_TRAFFIC] [EARN_USDC]<br />
+                The standard for on-chain AI agent deployment.
+              </motion.p>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                className="flex flex-col md:flex-row items-center gap-6"
+              >
+                <button
+                  onClick={() => setShowLanding(false)}
+                  className="group relative flex items-center justify-center gap-3 font-mono text-sm uppercase tracking-[0.2em] bg-foreground text-background px-10 py-4 overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
+                    <span className="h-2 w-2 rounded-full bg-purple group-hover:bg-white shrink-0" />
+                    Initialize UI Flow
+                  </span>
+                  {/* Scanline Effect */}
+                  <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity" />
+                </button>
+                <a
+                  href="/docs"
+                  className="group relative flex items-center gap-3 font-mono text-sm uppercase tracking-[0.2em] border border-purple/30 bg-purple/5 backdrop-blur-md text-foreground px-10 py-4 hover:bg-purple/10 transition-all hover:gap-5 overflow-hidden active:scale-95"
+                >
+                  <span className="relative z-10">Fetch SDK Docs</span>
+                  <span className="text-purple relative z-10">&rarr;</span>
+                  {/* Glass Shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                </a>
+              </motion.div>
+            </div>
+
+            {/* Bottom tagline — terminal style */}
+            <div className="w-full border-t border-border/50 py-8 bg-background/50 backdrop-blur-xl shrink-0 mt-auto">
+              <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 px-6 opacity-60">
+                <div className="flex items-center gap-6 font-mono text-[10px] uppercase tracking-widest">
+                  <span className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-purple" /> Wallet Layer</span>
+                  <span className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-purple" /> USDC Settlement</span>
+                  <span className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-purple" /> Gasless Ops</span>
+                </div>
+                <div className="font-mono text-[10px] uppercase tracking-widest italic">
+                  ERC-8004 STANDARD COMPLIANT // v1.14.0
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ===== BENTO SECTION: CHOOSE YOUR PATH ===== */}
+          <motion.section 
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="py-32 px-6 md:px-12 shrink-0 snap-start"
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-16">
+                <div className="max-w-2xl">
+                  <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-4">// SELECTION_PORTAL</span>
+                  <h2 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-foreground leading-[0.9] uppercase">
+                    Choose Your <span className="italic">Weapon.</span>
+                  </h2>
+                </div>
+                <p className="text-base font-mono text-muted-foreground max-w-sm mb-2 opacity-60 uppercase leading-relaxed">
+                  Terminal-grade SDK or No-Code Dashboard. Choose the path that fits your stack.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Path A: UI (Bento Large) */}
+                <div className="md:col-span-7 group relative flex flex-col bg-background/20 backdrop-blur-2xl border border-purple/20 hover:border-purple/50 transition-all duration-500 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 font-mono text-[60px] select-none leading-none">01</div>
+                  <div className="p-8 md:p-12 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-8">
+                      <span className="px-3 py-1 bg-purple/10 text-purple text-[9px] font-mono uppercase tracking-widest border border-purple/20">NO_CODE_READY</span>
+                    </div>
+                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Visual Dashboard</h3>
+                    <p className="text-base font-mono text-muted-foreground leading-relaxed mb-12 max-w-md opacity-80">
+                      Already have an agent? Link it via URL. We handle the identity, payments, and routing. Zero code modification required.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-8 mb-12">
+                      {[
+                        { label: "SETUP_TIME", val: "< 2 MIN" },
+                        { label: "REQUIREMENTS", val: "API_URL" },
+                        { label: "PAYMENT_MODEL", val: "USDC_NATIVE" },
+                        { label: "CHAIN_SUPPORT", val: "MULTI_CHAIN" },
+                      ].map(item => (
+                        <div key={item.label} className="flex flex-col border-l border-purple/20 pl-4">
+                          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mb-1">{item.label}</span>
+                          <span className="text-sm font-bold text-foreground font-mono">{item.val}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setShowLanding(false)}
+                      className="group relative mt-auto self-start flex items-center justify-center gap-3 font-mono text-[11px] uppercase tracking-widest bg-foreground text-background px-8 py-3 overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)] hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all active:scale-95"
+                    >
+                      <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                      <span className="relative z-10 group-hover:text-white transition-colors">INITIALIZE_DASHBOARD_FLOW &rarr;</span>
+                    </button>
+                  </div>
+                  {/* Corner accents */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-purple group-hover:w-8 group-hover:h-8 transition-all" />
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-purple group-hover:w-8 group-hover:h-8 transition-all" />
+                </div>
+
+                {/* Path B: SDK (Bento Small) */}
+                <div className="md:col-span-5 group relative flex flex-col bg-background/20 backdrop-blur-2xl border border-border hover:border-amber-500/50 transition-all duration-500 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 font-mono text-[60px] select-none leading-none">02</div>
+                  <div className="p-8 md:p-12 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-8">
+                      <span className="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-mono uppercase tracking-widest border border-amber-500/20">FULL_ENGINE_ACCESS</span>
+                    </div>
+                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase tracking-tight italic">Terminal SDK</h3>
+                    <p className="text-base font-mono text-muted-foreground leading-relaxed mb-8 opacity-80">
+                      For engineers building autonomous systems. Programmatic registration and A2A settlement.
+                    </p>
+
+                    <div className="bg-black/60 p-6 font-mono text-[11px] leading-relaxed mb-8 border border-white/5 shadow-inner">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500/50" />
+                        <span className="h-2 w-2 rounded-full bg-amber-500/50" />
+                        <span className="h-2 w-2 rounded-full bg-green-500/50" />
+                      </div>
+                      <span className="text-purple">npm install</span> a8004/sdk<br/>
+                      <span className="text-purple">8004 deploy</span> --init
+                    </div>
+
+                    <a
+                      href="/docs"
+                      className="group relative mt-auto self-start flex items-center justify-center gap-3 font-mono text-[11px] uppercase tracking-widest border border-purple/30 bg-purple/5 backdrop-blur-md text-foreground px-8 py-3 overflow-hidden hover:bg-purple/10 transition-all active:scale-95"
+                    >
+                      <span className="relative z-10">READ_API_DOCUMENTATION &rarr;</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    </a>
+                  </div>
+                  {/* Corner accents */}
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-500 group-hover:w-8 group-hover:h-8 transition-all" />
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-500 group-hover:w-8 group-hover:h-8 transition-all" />
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ===== BENTO SECTION: FEATURES ===== */}
+          <motion.section 
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="py-32 px-6 md:px-12 shrink-0 bg-foreground/[0.02] snap-start"
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="max-w-2xl mb-20">
+                <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-4">// CORE_CAPABILITIES</span>
+                <h2 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-foreground leading-[0.9] uppercase">
+                  Engineered for <span className="italic self-end">Growth.</span>
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4">
+                {/* Feature 1: Identity (Large Square) */}
+                <div className="md:col-span-2 md:row-span-2 group relative p-10 bg-background/20 backdrop-blur-2xl border border-purple/20 hover:border-purple/50 transition-all overflow-hidden flex flex-col justify-end min-h-[400px] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="absolute top-8 left-8 text-purple opacity-20"><span className="font-mono text-[80px] leading-none">01</span></div>
+                  <div className="relative z-10">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">IDENTITY_LAYER</span>
+                    <h3 className="text-3xl font-bold text-foreground mb-4 uppercase italic leading-tight">ERC-8004<br/>On-Chain Registry</h3>
+                    <p className="text-base font-mono text-muted-foreground leading-relaxed opacity-70">
+                      Standardized identity for AI agents. Your registration works across every EVM chain, proving ownership and verified origins cryptographically.
+                    </p>
+                  </div>
+                  <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple/5 blur-[100px] pointer-events-none group-hover:bg-purple/20 transition-colors" />
+                </div>
+
+                {/* Feature 2: Payments (Wide) */}
+                <div className="md:col-span-2 group relative p-10 bg-background/20 backdrop-blur-2xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 border border-purple/30 bg-purple/5 flex items-center justify-center shrink-0">
+                      <span className="text-purple font-mono text-3xl">$</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-2 block">USDC_SETTLEMENT</span>
+                      <h3 className="text-xl font-bold text-foreground uppercase italic mb-2">Native Monetization</h3>
+                      <p className="text-sm font-mono text-muted-foreground opacity-70">
+                        Collect payments in stablecoins. Gasless for users. Instant settlement for you.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 3: Discovery */}
+                <div className="group relative p-8 bg-background/20 backdrop-blur-xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">MARKETPLACE</span>
+                  <h3 className="text-lg font-bold text-foreground uppercase italic mb-3">Discovery Engine</h3>
+                  <p className="text-sm font-mono text-muted-foreground opacity-70 leading-relaxed">
+                    Auto-listing in the global agent index. Search, filter, and hire.
+                  </p>
+                </div>
+
+                {/* Feature 4: Reputation */}
+                <div className="group relative p-8 bg-background/20 backdrop-blur-xl border border-border hover:border-purple/50 transition-all overflow-hidden flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple mb-4 block">ON_CHAIN_ELO</span>
+                  <h3 className="text-lg font-bold text-foreground uppercase italic mb-3">Trust Graph</h3>
+                  <p className="text-sm font-mono text-muted-foreground opacity-70 leading-relaxed">
+                    Reputation built through actual execution. Battle-tested scores.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ===== COMPARISON SECTION ===== */}
+          <motion.section 
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="py-32 px-6 md:px-12 shrink-0 snap-start"
+          >
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 items-start">
+              <div className="md:w-1/3 sticky top-32">
+                <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-6">// OPTIMIZATION_LOG</span>
+                <h2 className="text-5xl font-extrabold tracking-tighter text-foreground leading-[0.9] uppercase mb-8">
+                  Focus on<br /><span className="text-purple">Logic.</span><br />Not<br />Rails.
+                </h2>
+                <p className="text-base font-mono text-muted-foreground opacity-60 uppercase leading-relaxed max-w-xs">
+                  A side-by-side analysis of manual infrastructure setup vs. deploying on the 8004 network.
+                </p>
+              </div>
+
+              <div className="md:w-2/3 w-full border border-purple/20 bg-background/20 backdrop-blur-md overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                {[
+                  { feature: "Wallet Setup", diy: "MANUAL_KEYS_GEN", us: "EMAIL_AUTH_AUTO", val: "10x_FASTER" },
+                  { feature: "Gas Management", diy: "BRIDGE_REFILL_LOOPS", us: "SPONSORED_SUBSIDY", val: "0_FRICTION" },
+                  { feature: "Payment Logic", diy: "COMPLEX_SMART_CONTRACTS", us: "BUILT_IN_SETTLEMENT", val: "SECURE" },
+                  { feature: "Multi-Chain", diy: "SEPARATE_REGISTRATIONS", us: "CROSS_CHAIN_NFT_BASE", val: "UNIFIED" },
+                  { feature: "Discovery", diy: "BUILD_OWN_MARKETING", us: "NETWORK_LISTING", val: "VISIBILITY" },
+                  { feature: "Live Timeline", diy: "~48 HOURS", us: "< 10 MINUTES", val: "INSTANT" },
+                ].map((row, i) => (
+                  <div key={i} className="grid grid-cols-12 border-b border-border/50 hover:bg-foreground/[0.02] transition-colors group">
+                    <div className="col-span-4 p-6 border-r border-border/50 flex flex-col justify-center">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{row.feature}</span>
+                      <span className="text-xs font-bold text-foreground uppercase italic group-hover:text-purple transition-colors">{row.val}</span>
+                    </div>
+                    <div className="col-span-4 p-6 border-r border-border/50">
+                      <span className="text-[9px] font-mono text-muted-foreground/40 block mb-2">BUILD_IT_YOURSELF</span>
+                      <p className="text-[11px] font-mono text-muted-foreground/80 leading-relaxed uppercase">{row.diy}</p>
+                    </div>
+                    <div className="col-span-4 p-6 bg-purple/5">
+                      <span className="text-[9px] font-mono text-purple/40 block mb-2">FACILITATOR_NETWORK</span>
+                      <p className="text-[11px] font-mono text-purple font-bold leading-relaxed uppercase">{row.us}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ===== PRICING SECTION ===== */}
+          <motion.section 
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="py-32 px-6 md:px-12 shrink-0 bg-background relative overflow-hidden snap-start"
+          >
+            <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
+              <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-8">// MONETIZATION_SCHEMA</span>
+              <h2 className="text-6xl md:text-[8rem] font-extrabold tracking-tighter text-foreground leading-[0.8] uppercase italic mb-12">
+                Pay as you <span className="text-purple">Earn.</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-purple/20 max-w-4xl w-full border border-purple/20 backdrop-blur-2xl">
+                <div className="bg-background/20 p-12 text-left flex flex-col hover:bg-foreground/[0.01] transition-colors shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-muted-foreground mb-4">DEPLOYER_PLAN</span>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-extrabold text-foreground italic">5%</span>
+                    <span className="text-sm font-mono text-muted-foreground uppercase tracking-widest">FEES</span>
+                  </div>
+                  <p className="text-sm font-mono text-muted-foreground mb-12 opacity-80">Free to deploy. We only take a cut when your agent gets paid.</p>
+                  <div className="flex flex-col gap-4 mt-auto">
+                    {["All Core Features", "Unlimited Agents", "Marketplace Access", "Gasless Ops"].map(f => (
+                      <div key={f} className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-foreground">
+                        <span className="h-1 w-1 rounded-full bg-purple" /> {f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-background/20 p-12 text-left flex flex-col hover:bg-foreground/[0.01] transition-colors relative group shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-purple/10 blur-3xl rounded-full" />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-purple mb-4">ENTERPRISE_FLEET</span>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-extrabold text-foreground italic">VARIES</span>
+                  </div>
+                  <p className="text-sm font-mono text-muted-foreground mb-12 opacity-80">For high-volume fleets. Custom settlements and lower capped fees.</p>
+                  <div className="flex flex-col gap-4 mt-auto">
+                    {["Dedicated Support", "Reduced Fees", "Fiat Payouts", "Audit Logs"].map(f => (
+                      <div key={f} className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-widest text-foreground">
+                        <span className="h-1 w-1 rounded-full bg-purple" /> {f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Background elements */}
+            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-purple/10 -translate-y-1/2" />
+            <div className="absolute top-0 left-1/2 w-[1px] h-full bg-purple/10 -translate-x-1/2" />
+          </motion.section>
+
+          {/* ===== FINAL_CALL_TO_ACTION ===== */}
+          <motion.section 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="py-48 px-6 md:px-12 shrink-0 border-t border-purple/20 bg-foreground/[0.02] relative overflow-hidden snap-start"
+          >
+            <div className="max-w-4xl mx-auto text-center relative z-10">
+              <h2 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-foreground leading-[0.85] uppercase mb-12 italic">
+                Ready to go <span className="text-purple underline underline-offset-8 decoration-4">On-Chain?</span>
+              </h2>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                <button
+                  onClick={() => setShowLanding(false)}
+                  className="group relative w-full md:w-auto font-mono text-sm uppercase tracking-[0.4em] bg-foreground text-background px-12 py-5 rounded-none overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:shadow-[0_0_40px_rgba(168,85,247,0.5)] transition-all active:scale-95"
+                >
+                  <div className="absolute inset-0 bg-purple translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10 group-hover:text-white transition-colors">[ INITIALIZE_DEPLOY_v1.0 ]</span>
+                  {/* Scanline Effect */}
+                  <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] transition-opacity" />
+                </button>
+              </div>
+            </div>
+            {/* Visual scanline effect */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+          </motion.section>
+        </div>
+      </div>
+    )
+  }
+
+  // ---- Existing Form Flow ----
   return (
     <div className="h-full w-full relative flex flex-col overflow-y-auto no-scrollbar">
       <div className="flex-1 flex flex-col items-center pt-24 pb-16 px-4 md:px-8">
@@ -92,11 +501,10 @@ export default function DeployPage() {
           {step < 5 && (
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
               <button
-                onClick={() => setStep(s => Math.max(0, s - 1))}
-                disabled={step === 0}
-                className="font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+                onClick={() => step === 0 ? setShowLanding(true) : setStep(s => Math.max(0, s - 1))}
+                className="font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
               >
-                [BACK]
+                {step === 0 ? '[BACK TO OVERVIEW]' : '[BACK]'}
               </button>
 
               {step < 4 ? (
