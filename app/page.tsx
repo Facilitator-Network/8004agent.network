@@ -1,24 +1,20 @@
 import { HomeLayout } from "@/components/landing/home-layout"
 import { HeroSection } from "@/components/landing/hero-section"
-import { ProblemSection } from "@/components/landing/problem-section"
-import { PipelineSection } from "@/components/landing/pipeline-section"
-import { ArenaSection } from "@/components/landing/arena-section"
-import { NamingSection } from "@/components/landing/naming-section"
-import { DifferentiationSection } from "@/components/landing/differentiation-section"
-import { NetworkSection } from "@/components/landing/network-section"
-import { FinalCTASection } from "@/components/landing/final-cta-section"
+import { FeaturesSection } from "@/components/landing/features-section"
+import { BrowseAgentsSection } from "@/components/landing/browse-agents-section"
+import { HowItWorksSection } from "@/components/landing/how-it-works-section"
+import { PaymentsSection } from "@/components/landing/payments-section"
+import { TrustSection } from "@/components/landing/trust-section"
 
 export default function Page() {
   return (
     <HomeLayout>
       <HeroSection />
-      <ProblemSection />
-      <PipelineSection />
-      <ArenaSection />
-      <NamingSection />
-      <DifferentiationSection />
-      <NetworkSection />
-      <FinalCTASection />
+      <FeaturesSection />
+      <BrowseAgentsSection />
+      <HowItWorksSection />
+      <PaymentsSection />
+      <TrustSection />
     </HomeLayout>
   )
 }

@@ -66,7 +66,11 @@ export default {
   			'info-blue': 'hsl(var(--info-blue))',
   			'warning-amber': 'hsl(var(--warning-amber))',
   			'error-red': 'hsl(var(--error-red))',
-  			'system-muted': 'hsl(var(--system-muted))'
+  			'system-muted': 'hsl(var(--system-muted))',
+  			'purple': {
+  				DEFAULT: 'hsl(var(--purple))',
+  				foreground: 'hsl(var(--purple-foreground))',
+  			}
   		}
   	}
   },

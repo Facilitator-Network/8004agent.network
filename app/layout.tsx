@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { WalletProvider } from "@/components/wallet-provider"
 import { Navbar } from "@/components/layout/navbar"
 import { StatusBar } from "@/components/layout/status-bar"
+import { PixelCornerFrames } from "@/components/ui/pixel-corner-frames"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 
@@ -35,7 +36,8 @@ export default function RootLayout({
           <WalletProvider>
             <div className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-hidden">
                <Navbar />
-               <main className="flex-1 relative overflow-hidden flex flex-col">
+               <PixelCornerFrames />
+               <main className="flex-1 relative overflow-hidden flex flex-col halftone-dots px-8 pt-0 pb-12">
                  {children}
                </main>
                <StatusBar />

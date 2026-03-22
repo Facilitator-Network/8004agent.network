@@ -20,9 +20,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   const pixelColor = theme === "light" ? "#5b21b6" : "#B19EEF"
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background">
-      <PixelCornerFrames />
-      
+    <div className="relative w-full h-full bg-background">
       {/* Fixed Background */}
       <div className="fixed top-20 bottom-12 left-8 right-8 z-0 opacity-40">
         {mounted && (
