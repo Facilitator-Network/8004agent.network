@@ -8,7 +8,7 @@ interface HomeLayoutProps {
 
 export function HomeLayout({ children }: HomeLayoutProps) {
   return (
-    <div className="relative w-full bg-[var(--bg-d)]">
+    <div className="relative w-full">
       {children}
     </div>
   )

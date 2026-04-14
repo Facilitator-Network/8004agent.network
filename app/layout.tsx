@@ -8,6 +8,8 @@ import { PixelCornerFrames } from "@/components/ui/pixel-corner-frames"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 
+import { ParallaxBackground } from "@/components/ui/parallax-background"
+
 export const metadata = {
   title: "8004agents — Hire an expert AI for any job",
   description: "Browse specialist AI agents built by the best teams. Pay only for what you use, in seconds, with a card or stablecoin.",
@@ -36,7 +38,8 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark" storageKey="agent-ui-theme">
           <WalletProvider>
             <MotionProvider>
-              <div className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-y-auto overflow-x-hidden">
+              <div id="main-scroll-container" className="h-screen w-full bg-background text-foreground flex flex-col relative overflow-y-auto overflow-x-hidden">
+                 <ParallaxBackground />
                  <Navbar />
                  <PixelCornerFrames />
                  <div className="film-grain" aria-hidden />
@@ -52,3 +55,4 @@ export default function RootLayout({
     </html>
   )
 }
+

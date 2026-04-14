@@ -77,6 +77,10 @@
     /* Phosphor glow (light — neutral text OFF, accent only) */
     --phosphor-neutral: none;
     --phosphor-accent: 0 0 14px rgba(124, 92, 255, 0.35);
+
+    /* Dot pattern color */
+    --dot-color: color-mix(in srgb, var(--accent-d) 20%, rgba(0, 0, 0, 0.15));
+    --dot-bright-color: color-mix(in srgb, var(--accent-d) 80%, rgba(0, 0, 0, 0.6));
   }
 
   .dark {
@@ -144,6 +148,10 @@
     /* Phosphor glow (dark — on for both neutral + accent) */
     --phosphor-neutral: 0 0 24px rgba(139, 108, 255, 0.35), 0 0 8px rgba(242, 242, 245, 0.18);
     --phosphor-accent: 0 0 28px rgba(139, 108, 255, 0.55), 0 0 10px rgba(139, 108, 255, 0.45);
+
+    /* Dot pattern color - slightly tinted with accent */
+    --dot-color: color-mix(in srgb, var(--accent-d) 20%, rgba(255, 255, 255, 0.15));
+    --dot-bright-color: color-mix(in srgb, var(--accent-d) 80%, rgba(255, 255, 255, 0.6));
   }
 
   /* Status & font tokens — constant across modes */
@@ -206,7 +214,15 @@
   }
 }
 
-
+/* =========================================================
+   Dot background — dynamic themed dot grid
+   ========================================================= */
+.bg-dot-pattern {
+  background-image: 
+    radial-gradient(circle, var(--dot-bright-color) 1px, transparent 1px),
+    radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 144px 144px, 48px 48px;
+}
 
 /* =========================================================
    Film grain — fixed SVG noise, stepped shift loop
@@ -2255,7 +2271,6 @@
 }
 
 /* ── Phase B — Match ────────────────────────────────────── */
-.arena-story__phase--match { }
 .arena-story__match-grid {
   position: relative;
   display: grid;
