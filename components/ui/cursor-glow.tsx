@@ -1,37 +1,53 @@
 "use client"
-import { useEffect } from "react"
-import { motion, useSpring, useMotionValue } from "framer-motion"
+
+import { useEffect, useRef } from "react"
 
 export function CursorGlow() {
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  const springConfig = { damping: 25, stiffness: 150, mass: 0.5 }
-  const x = useSpring(mouseX, springConfig)
-  const y = useSpring(mouseY, springConfig)
+  const glowRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX - 150) // Center the 300px circle
-      mouseY.set(e.clientY - 150)
+    const el = glowRef.current
+    if (!el) return
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduced) return
+
+    let rafId: number
+    let mx = -2000
+    let my = -2000
+    let cx = -2000
+    let cy = -2000
+
+    function onMove(e: MouseEvent) {
+      mx = e.clientX
+      my = e.clientY
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
+    const node = el
+    function tick() {
+      cx += (mx - cx) * 0.08
+      cy += (my - cy) * 0.08
+      node.style.background = `radial-gradient(640px circle at ${cx}px ${cy}px, var(--accent-glow), transparent 68%)`
+      rafId = requestAnimationFrame(tick)
+    }
+
+    window.addEventListener("mousemove", onMove, { passive: true })
+    rafId = requestAnimationFrame(tick)
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mousemove", onMove)
+      cancelAnimationFrame(rafId)
     }
-  }, [mouseX, mouseY])
+  }, [])
 
   return (
-    <motion.div
-      className="fixed pointer-events-none z-0 rounded-full mix-blend-screen opacity-15 dark:opacity-20"
+    <div
+      ref={glowRef}
+      className="cursor-glow fixed inset-0 pointer-events-none"
       style={{
-        x,
-        y,
-        width: 300,
-        height: 300,
-        background: `radial-gradient(circle, rgba(var(--primary), 0.8) 0%, transparent 60%)`,
+        filter: "blur(var(--cursor-glow-blur))",
+        opacity: "var(--cursor-glow-opacity)" as unknown as number,
+        zIndex: 1,
       }}
     />
   )

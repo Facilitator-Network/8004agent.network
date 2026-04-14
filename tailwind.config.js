@@ -4,7 +4,7 @@ export default {
     content: [
       "./app/**/*.{ts,tsx}",
       "./components/**/*.{ts,tsx}",
-      "./src/**/*.{ts,tsx}", // Keep for safety during migration
+      "./src/**/*.{ts,tsx}",
     ],
   theme: {
   	extend: {
@@ -12,6 +12,8 @@ export default {
         "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "float": "float 6s ease-in-out infinite",
         "blink-glow": "blink-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "ticker": "ticker-scroll 50s linear infinite",
+        "status-pulse": "status-pulse 2s infinite",
       },
       keyframes: {
         float: {
@@ -22,11 +24,24 @@ export default {
           "0%, 100%": { transform: "scale(1)", opacity: "1" },
           "50%": { transform: "scale(2)", opacity: "0.5" },
         },
+        "ticker-scroll": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "status-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.4" },
+        },
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)'],
-        pixel: ['"Pixelify Sans"', 'sans-serif'], // Keep for logo if needed
+        mono: ['JetBrains Mono', 'var(--font-geist-mono)', 'ui-monospace', 'monospace'],
+        pixel: ['"Pixelify Sans"', 'sans-serif'],
+        display: ['"Archivo Black"', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'serif'],
+      },
+      maxWidth: {
+        'content': '1280px',
       },
   		colors: {
   			background: 'hsl(var(--background))',

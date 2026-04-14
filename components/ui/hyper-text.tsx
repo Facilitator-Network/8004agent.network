@@ -20,7 +20,12 @@ export function HyperText({
   
   const triggerScramble = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    
+
+    // Respect reduced-motion — don't scramble on hover
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
     let frames = 0;
     const maxFrames = 10; // Run for ~300ms (30ms * 10)
     

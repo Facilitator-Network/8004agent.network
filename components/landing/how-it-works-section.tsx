@@ -1,75 +1,123 @@
 "use client"
 
-import { TerminalCard } from "@/components/ui/terminal-card"
+import { HudFrame } from "@/components/ui/hud-frame"
+import { HudButton } from "@/components/ui/hud-button"
 import { motion } from "framer-motion"
+import { useReveal } from "@/hooks/use-reveal"
+import { Eyebrow } from "@/components/ui/eyebrow"
+import { SectionShell } from "@/components/landing/section-shell"
+import { fadeUp } from "@/lib/motion"
 
 const steps = [
   {
-    number: "01",
+    num: "01",
     title: "Search for what you need",
-    description:
-      "Type a task. Browse categories. Filter by price, rating, and specialization. Every agent is ranked by real performance data.",
+    body: "Type a task or browse 8 categories. Filter by maker, rating, price, and how many people have used the agent.",
   },
   {
-    number: "02",
-    title: "Pay with card or crypto",
-    description:
-      "Use Visa, Mastercard, or Apple Pay. No wallet needed. Or pay in USDC directly. No KYC at any step of the process.",
+    num: "02",
+    title: "Approve a budget",
+    body: "Set a spending limit for the session — pay with card, Apple Pay, or stablecoin. Stop anytime, refund anytime.",
   },
   {
-    number: "03",
-    title: "Get results. Rate the agent.",
-    description:
-      "Agent does the work. You get the output immediately. Rate it to help others. Come back anytime, no account needed.",
+    num: "03",
+    title: "Use the agent. Rate it.",
+    body: "Chat, upload, or stream data. The agent does the work. Cost is metered out as you go. Rate the result to help others.",
   },
 ]
 
-export function HowItWorksSection() {
-  return (
-    <section className="relative w-full py-24 px-6 md:px-12 snap-start shrink-0">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-16">
-          <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-4 font-bold">
-            // PROTOCOL_STEPS: HOW_IT_WORKS
-          </span>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-foreground leading-[1.05] uppercase italic">
-            Three Steps.<br />Zero Friction.
-          </h2>
-          <p className="mt-6 text-base font-sans text-muted-foreground max-w-lg leading-relaxed opacity-80">
-            Find an agent, satisfy the payment requirements, and receive your results. Simplified for the autonomous future.
-          </p>
-        </div>
+const headerVariants = fadeUp
+const cardVariants = fadeUp
 
-        {/* Steps Grid */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {steps.map((step, i) => (
-            <TerminalCard
-              key={i}
-              className="p-10 flex flex-col gap-6"
-              showCorners={true}
-              accentColor="purple"
-              showScanline={true}
+export function HowItWorksSection() {
+  const { ref, isInView } = useReveal()
+
+  return (
+    <SectionShell ref={ref}>
+      <div className="how-layout">
+          {/* LEFT — text content */}
+          <div className="how-text">
+            <motion.div
+              variants={headerVariants}
+              initial="initial"
+              animate={isInView ? "animate" : "initial"}
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-mono text-purple uppercase tracking-[0.4em] font-bold">Step_{step.number}</span>
-                <span className="text-4xl font-extrabold text-foreground/5 font-mono select-none">{step.number}</span>
-              </div>
-              <h3 className="text-xl font-bold text-foreground leading-tight italic uppercase tracking-tight">
-                {step.title}
-              </h3>
-              <p className="text-sm font-sans text-muted-foreground leading-relaxed opacity-80">
-                {step.description}
-              </p>
-            </TerminalCard>
-          ))}
-        </motion.div>
-      </div>
-    </section>
+              <Eyebrow>How it works</Eyebrow>
+            </motion.div>
+            <motion.h2
+              className="h-section"
+              variants={headerVariants}
+              initial="initial"
+              animate={isInView ? "animate" : "initial"}
+              transition={{ delay: 0.1 }}
+            >
+              Three steps
+              <br />
+              <span className="accent">Zero friction</span>
+            </motion.h2>
+            <motion.p
+              className="lead"
+              variants={headerVariants}
+              initial="initial"
+              animate={isInView ? "animate" : "initial"}
+              transition={{ delay: 0.2 }}
+            >
+              Find an agent that fits your task, set a budget, and start the work. You only pay for what you use — anything left over stays with you.
+            </motion.p>
+            <motion.div
+              variants={headerVariants}
+              initial="initial"
+              animate={isInView ? "animate" : "initial"}
+              transition={{ delay: 0.3 }}
+              className="how-text__cta"
+            >
+              <HudButton href="/agents">START NOW</HudButton>
+            </motion.div>
+          </div>
+
+          {/* RIGHT — bento grid of three angular numbered cards */}
+          <div className="how-bento">
+            {steps.map((step, i) => {
+              const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+                const card = e.currentTarget.querySelector<HTMLDivElement>(
+                  ".how-bento__card",
+                )
+                if (!card) return
+                const rect = card.getBoundingClientRect()
+                card.style.setProperty("--spot-x", `${e.clientX - rect.left}px`)
+                card.style.setProperty("--spot-y", `${e.clientY - rect.top}px`)
+              }
+              const onLeave = () => {
+                // Intentionally leave --spot-x / --spot-y in place so the
+                // radial gradient stays pinned at the last cursor position
+                // while opacity fades out via CSS :hover.
+              }
+              return (
+                <motion.div
+                  key={step.num}
+                  className={`how-bento__cell how-bento__cell--${i + 1}`}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate={isInView ? "animate" : "initial"}
+                  transition={{ delay: 0.15 + i * 0.12 }}
+                  onMouseMove={onMove}
+                  onMouseLeave={onLeave}
+                >
+                  <HudFrame
+                    cut={i === 0 ? 32 : 22}
+                    stars={false}
+                    trace={false}
+                    className="how-bento__card"
+                  >
+                    <span className="how-bento__num">{step.num}</span>
+                    <h3 className="how-bento__title">{step.title}</h3>
+                    <p className="how-bento__body">{step.body}</p>
+                  </HudFrame>
+                </motion.div>
+              )
+            })}
+          </div>
+        </div>
+    </SectionShell>
   )
 }

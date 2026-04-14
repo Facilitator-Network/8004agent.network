@@ -32,7 +32,15 @@ export function DecryptText({
   useEffect(() => {
     // If text hasn't changed, do nothing
     if (text === previousTextRef.current && !isScrambling) return
-    
+
+    // Respect reduced-motion — render final text immediately, skip animation
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayText(text)
+      setIsScrambling(false)
+      previousTextRef.current = text
+      return
+    }
+
     // Start scrambling
     setIsScrambling(true)
     let iteration = 0

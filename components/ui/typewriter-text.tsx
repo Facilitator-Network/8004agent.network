@@ -26,6 +26,13 @@ export function TypewriterText({
   }, [onComplete])
 
   useEffect(() => {
+    // Respect reduced-motion — jump to final state and signal complete
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayed(mode === "type" ? text : "")
+      if (onCompleteRef.current) onCompleteRef.current()
+      return
+    }
+
     // If typing, start from empty. If deleting, start from full.
     // However, if we switch modes, we want to respect current content or just reset?
     // For simplicity in this sequence: Typing always starts from 0, Deleting always starts from text.
@@ -59,5 +66,5 @@ export function TypewriterText({
     return () => clearInterval(timer)
   }, [text, mode, speed, deleteSpeed]) // Depend on mode to restart effect
 
-  return <span className={className}>{displayed}<span className="animate-pulse">_</span></span>
+  return <span className={className}>{displayed}<span className="motion-safe:animate-pulse">_</span></span>
 }

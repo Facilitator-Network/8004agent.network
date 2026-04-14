@@ -1,63 +1,68 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
-import { useTheme } from "@/components/theme-provider"
-import ShinyText from "@/components/ui/shiny-text"
-import { BrainIcon, type BrainIconHandle } from "@/components/ui/brain-icon"
-import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button"
+import { HudFrame } from "@/components/ui/hud-frame"
+import { HudButton } from "@/components/ui/hud-button"
+import { Eyebrow } from "@/components/ui/eyebrow"
+import { motion } from "framer-motion"
+import { fadeUp, staggerContainer, ease, durations } from "@/lib/motion"
+
+const container = staggerContainer({ children: 0.12, delay: 0.1 })
+const item = fadeUp
+
+const TICKER_TEXT = (
+  <>
+    <span className="marker">&gt; MISSION BRIEF</span>
+    BROWSE SPECIALIST AGENTS BUILT BY THE WORLD&apos;S BEST AI TEAMS · PAY ONLY FOR WHAT YOU USE · IN SECONDS · CARD OR STABLECOIN · NO SIGNUP · NO COMMITMENT
+  </>
+)
 
 export function HeroSection() {
-  const { theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const brainRef = useRef<BrainIconHandle>(null)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) return <section className="relative w-full h-screen bg-background" />
-
-  /* ... inside component ... */
-  const isDark = theme === "dark"
-  const shinyBase = isDark ? "#e5e5e5" : "#000000" // lighter grey for dark mode base
-  const shinyShine = isDark ? "#ffffff" : "#666666" // dark grey for light mode shine
-
   return (
-    <section className="relative w-full h-screen flex flex-col items-center justify-center p-6 text-center snap-start shrink-0">
-      <div className="z-10 flex flex-col items-center gap-4 max-w-[90vw] w-full px-4 animate-in fade-in zoom-in-95 duration-1000 ease-out">
-        <div className="flex flex-col items-center gap-2">
-          <div 
-            className="flex items-center gap-3 border border-border bg-transparent backdrop-blur-md px-5 py-2 rounded-full text-sm font-mono uppercase tracking-wide text-muted-foreground animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 hover:bg-foreground/5 transition-all duration-300 hover:scale-105 cursor-default"
-            onMouseEnter={() => brainRef.current?.startAnimation()}
-            onMouseLeave={() => brainRef.current?.stopAnimation()}
-          >
-             <BrainIcon ref={brainRef} size={18} className="text-muted-foreground/50" />
-             <ShinyText 
-                text="No signup. No KYC. Just search and hire." 
-                disabled={false}
-                speed={2} 
-                className="" 
-                color={shinyBase}
-                shineColor={shinyShine}
-             />
-          </div>
-          <h1 className="text-5xl md:text-8xl font-bold tracking-tighter text-foreground font-mono uppercase transition-all duration-300 [word-spacing:-0.2em]">
-            Find, Hire, Pay <br /> AI Agents Instantly
-          </h1>
-        </div>
+    <section className="relative min-h-[calc(100vh-64px-32px)] flex items-center justify-center px-6 py-16 overflow-hidden">
+      <motion.div
+        className="relative z-[2] w-full max-w-[1080px]"
+        variants={container}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div variants={item}>
+          <HudFrame cut={48} trace={false} className="hero-frame">
+            <Eyebrow className="hero-frame__eyebrow">Pre-launch alpha</Eyebrow>
 
-        <div className="flex items-center gap-4 mt-0">
-          <InteractiveHoverButton 
-            text="DEPLOY" 
-            className="w-40 h-10 font-mono tracking-widest uppercase"
-          />
-          <InteractiveHoverButton 
-            text="HIRE" 
-            className="w-40 h-10 font-mono tracking-widest uppercase"
-          />
-        </div>
+            {/* huge headline filling the frame */}
+            <h1 className="h-section hero-frame__headline phosphor">
+              <span className="hero-glitch">
+                EXPERT AI AGENTS
+                <br />
+                <motion.span
+                  className="hero-frame__accent phosphor-accent"
+                  initial={{ opacity: 0, filter: "blur(12px)" }}
+                  animate={{ opacity: 1, filter: "blur(0px) drop-shadow(0 0 26px var(--accent-glow))" }}
+                  transition={{ duration: durations.slow, delay: 0.5, ease: ease.out }}
+                >
+                  FOR ANY JOB
+                </motion.span>
+              </span>
+            </h1>
 
-      </div>
+            {/* angular ticker frame mirrored by CTA button group */}
+            <div className="hero-frame__row">
+              <HudFrame cut={14} stars={false} trace={false} className="hero-ticker-frame">
+                <div className="hero-ticker-mask">
+                  <div className="hero-ticker-marquee">
+                    <span className="hero-ticker-text">{TICKER_TEXT}</span>
+                    <span className="hero-ticker-text" aria-hidden>{TICKER_TEXT}</span>
+                  </div>
+                </div>
+              </HudFrame>
+              <div className="hero-frame__btns">
+                <HudButton href="/agents">CLAIM YOUR .HUMAN</HudButton>
+                <HudButton href="/agents">FIND AGENTS</HudButton>
+              </div>
+            </div>
+          </HudFrame>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }

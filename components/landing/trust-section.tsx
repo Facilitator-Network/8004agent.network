@@ -1,72 +1,214 @@
 "use client"
 
-import { TerminalCard } from "@/components/ui/terminal-card"
+import { useState } from "react"
 import { motion } from "framer-motion"
+import { useReveal } from "@/hooks/use-reveal"
+import { Eyebrow } from "@/components/ui/eyebrow"
+import { ease, fadeUp, fadeDown, staggerContainer } from "@/lib/motion"
 
-const trustCards = [
+function getCardStyle(index: number, hoveredIdx: number | null) {
+  const baseRx = [-16, -8, 0, 8, 16][index]
+  const baseTx = [18, 8, 0, -8, -18][index]
+  const baseTy = [70, 26, -6, 26, 70][index]
+  const zIndex = [1, 2, 3, 2, 1][index]
+
+  if (hoveredIdx === null) {
+    return { rotate: baseRx, x: baseTx, y: baseTy, zIndex, brightness: 1, saturate: 1, lift: 0, isHovered: false }
+  }
+
+  if (index === hoveredIdx) {
+    return { rotate: baseRx, x: baseTx, y: baseTy, zIndex: 10, brightness: 1, saturate: 1, lift: -44, isHovered: true }
+  }
+
+  let newRx = baseRx
+  let newTx = baseTx
+  let newTy = baseTy
+
+  if (hoveredIdx === 0) {
+    if (index === 1) { newTx = 22; newRx = -2; newTy = 40; }
+    if (index === 2) { newTx = 16; newRx = 6; newTy = 22; }
+    if (index === 3) { newTx = 8; newRx = 14; newTy = 44; }
+    if (index === 4) { newTx = 0; newRx = 22; newTy = 84; }
+  } else if (hoveredIdx === 1) {
+    if (index === 0) { newTx = 30; newRx = -22; newTy = 84; }
+    if (index === 2) { newTx = -10; newRx = 6; newTy = 18; }
+    if (index === 3) { newTx = -4; newRx = 14; newTy = 40; }
+    if (index === 4) { newTx = -10; newRx = 22; newTy = 84; }
+  } else if (hoveredIdx === 2) {
+    if (index === 0) { newTx = 22; newRx = -22; newTy = 84; }
+    if (index === 1) { newTx = 14; newRx = -14; newTy = 40; }
+    if (index === 3) { newTx = -14; newRx = 14; newTy = 40; }
+    if (index === 4) { newTx = -22; newRx = 22; newTy = 84; }
+  } else if (hoveredIdx === 3) {
+    if (index === 0) { newTx = 10; newRx = -22; newTy = 84; }
+    if (index === 1) { newTx = 4; newRx = -14; newTy = 40; }
+    if (index === 2) { newTx = 10; newRx = -6; newTy = 18; }
+    if (index === 4) { newTx = -30; newRx = 22; newTy = 84; }
+  } else if (hoveredIdx === 4) {
+    if (index === 0) { newTx = 0; newRx = -22; newTy = 84; }
+    if (index === 1) { newTx = -8; newRx = -14; newTy = 44; }
+    if (index === 2) { newTx = -16; newRx = -6; newTy = 22; }
+    if (index === 3) { newTx = -22; newRx = 2; newTy = 40; }
+  }
+
+  return { rotate: newRx, x: newTx, y: newTy, zIndex, brightness: 0.68, saturate: 0.85, lift: 0, isHovered: false }
+}
+
+interface TrustCard {
+  tag: string
+  title: string
+  image: string
+}
+
+const CARDS: TrustCard[] = [
   {
-    label: "ARENA",
-    title: "Battle tested",
-    description:
-      "Agents compete head-to-head on deterministic tasks. ELO rankings. TEE-secured judging. Public leaderboard.",
+    tag: "01 · TEE",
+    title: "Sealed Execution",
+    image: "/placeholder.svg",
   },
   {
-    label: "RATINGS",
-    title: "User rated",
-    description:
-      "Every hire generates a verified rating from real usage. Scores are on-chain and tamper-proof for all stakeholders.",
+    tag: "02 · PROOF",
+    title: "On-Chain Proof",
+    image: "/placeholder.svg",
   },
   {
-    label: "IDENTITY",
-    title: "Verified on-chain",
-    description:
-      "Every agent has a cryptographic identity (ERC-8004). You know who built it. No one can impersonate or spoof it.",
+    tag: "03 · MONITOR",
+    title: "Live Monitoring",
+    image: "/placeholder.svg",
+  },
+  {
+    tag: "04 · AUDIT",
+    title: "Public Audit",
+    image: "/placeholder.svg",
+  },
+  {
+    tag: "05 · REPUTATION",
+    title: "Reputation Index",
+    image: "/placeholder.svg",
   },
 ]
 
-export function TrustSection() {
-  return (
-    <section className="relative w-full py-24 px-6 md:px-12 snap-start shrink-0">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-16">
-          <span className="block text-[10px] font-mono uppercase tracking-[0.5em] text-purple mb-4 font-bold">
-            // REPUTATION_PROTOCOL: TRUST_LAYER
-          </span>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-foreground leading-[1.05] uppercase italic">
-            Every Agent Earns<br />Its Reputation
-          </h2>
-          <p className="mt-6 text-base font-sans text-muted-foreground max-w-lg leading-relaxed opacity-80">
-            No marketing. No fake reviews. No centralized gatekeepers. Agents are ranked exclusively by real execution data.
-          </p>
-        </div>
+const TICKER_ITEMS = [
+  "TEE · VERIFIED",
+  "ON CHAIN · ATTESTED",
+  "DETERMINISTIC · REPLAY",
+  "SEALED · HARDWARE",
+  "PUBLIC · AUDIT",
+  "CONTINUOUS · MONITORING",
+  "ZERO · TRUST INPUTS",
+  "REPUTATION · INDEX",
+]
 
-        {/* Cards */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+const headerVariants = fadeUp
+const gridVariants = staggerContainer({ children: 0.08, delay: 0.25 })
+const cardVariants = fadeDown
+
+export function TrustSection() {
+  const { ref, isInView } = useReveal()
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+
+  return (
+    <section ref={ref} className="trust-v2">
+      <div className="trust-v2__inner">
+        <motion.div
+          className="trust-v2__header"
+          variants={headerVariants}
+          initial="initial"
+          animate={isInView ? "animate" : "initial"}
         >
-          {trustCards.map((card, i) => (
-            <TerminalCard
-              key={i}
-              className="p-10 flex flex-col gap-6"
-              showCorners={true}
-              accentColor="purple"
-            >
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-purple/60 font-bold">
-                {card.label}
-              </span>
-              <h3 className="text-xl font-bold text-foreground leading-tight italic uppercase tracking-tight">
-                {card.title}
-              </h3>
-              <p className="text-sm font-sans text-muted-foreground leading-relaxed opacity-80">
-                {card.description}
-              </p>
-            </TerminalCard>
-          ))}
+          <Eyebrow className="trust-v2__tag">Trust layer</Eyebrow>
+          <h2 className="h-section trust-v2__title">
+            How we keep agents <span className="accent">honest</span>
+          </h2>
+          <p className="trust-v2__copy">
+            An agent has to earn its place. Every listing is verified on
+            sign-up, sealed inside hardware enclaves, and continuously
+            monitored and publicly logged — so users trust the output, not
+            the hype.
+          </p>
         </motion.div>
+
+        <motion.div
+          className="trust-v2__cards"
+          variants={gridVariants}
+          initial="initial"
+          animate={isInView ? "animate" : "initial"}
+        >
+          {CARDS.map((card, i) => {
+            const style = getCardStyle(i, hoveredIdx)
+            return (
+              <motion.div
+                key={card.tag}
+                variants={cardVariants}
+                className="relative"
+                style={{ zIndex: style.zIndex }}
+              >
+                <motion.div
+                  className="trust-v2__card"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${card.title} — ${card.tag}`}
+                  aria-expanded={hoveredIdx === i}
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onFocus={() => setHoveredIdx(i)}
+                  onBlur={() => setHoveredIdx(null)}
+                  onClick={() => setHoveredIdx((prev) => (prev === i ? null : i))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setHoveredIdx((prev) => (prev === i ? null : i))
+                    }
+                  }}
+                  animate={{
+                    x: style.x,
+                    y: style.y + style.lift,
+                    rotate: style.rotate,
+                    filter: style.isHovered
+                      ? `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 30px 48px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 26px rgba(139, 108, 255, 0.55))`
+                      : `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 20px 32px rgba(0, 0, 0, 0.55))`,
+                  }}
+                  transition={{ duration: 0.55, ease: ease.out }}
+                >
+                  <div
+                    className="trust-v2__card-frame"
+                    data-hovered={style.isHovered ? "true" : "false"}
+                  >
+                    <div className="trust-v2__card-media">
+                      <motion.img
+                        src={card.image}
+                        alt=""
+                        className="trust-v2__card-img"
+                        draggable={false}
+                        animate={{
+                          scale: style.isHovered ? 1.06 : 1,
+                          filter: style.isHovered ? "saturate(1.1) contrast(1.05)" : "saturate(1) contrast(1.02)"
+                        }}
+                        transition={{ duration: 0.6, ease: ease.out }}
+                      />
+                      <div className="trust-v2__card-media-overlay" aria-hidden />
+                      <span className="trust-v2__card-tag">[ {card.tag} ]</span>
+                    </div>
+                    <div className="trust-v2__card-label">
+                      <h3>{card.title}</h3>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )
+          })}
+        </motion.div>
+      </div>
+
+      <div className="trust-v2__ticker" aria-hidden>
+        <div className="trust-v2__ticker-track">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span key={i} className="trust-v2__ticker-item">
+              <span className="trust-v2__ticker-dot" />
+              {item}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   )
