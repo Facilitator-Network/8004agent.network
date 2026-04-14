@@ -432,7 +432,7 @@
    ========================================================= */
 .h-section {
   font-family: var(--font-display);
-  font-size: clamp(28px, 4vw, 48px);
+  font-size: clamp(36px, 5vw, 56px);
   line-height: 0.95;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -449,9 +449,9 @@
   filter: drop-shadow(0 0 18px var(--accent-glow));
 }
 .final-cta__title {
-  font-size: clamp(48px, 8vw, 112px);
-  line-height: 0.92;
-  letter-spacing: -0.025em;
+  font-size: clamp(40px, 6vw, 80px);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
   margin-bottom: 24px;
 }
 .final-cta__title .accent {
@@ -461,9 +461,35 @@
 .lead {
   color: var(--fg-muted-d);
   font-family: var(--font-mono-jb);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 56ch;
   line-height: 1.6;
+}
+
+/* =========================================================
+   Standard Card Typography
+   ========================================================= */
+.card-heading {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--fg-d);
+  margin: 0;
+}
+.card-body {
+  font-family: var(--font-mono-jb);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-muted-d);
+  margin: 0;
+}
+.card-padding {
+  padding: 32px;
+}
+.card-dense-padding {
+  padding: 24px;
 }
 
 /* =========================================================
@@ -534,7 +560,7 @@
    ========================================================= */
 .payments-v2 {
   position: relative;
-  padding: 56px 0 48px;
+  padding: 96px 0; /* Standardized section padding */
 }
 .payments-v2__inner {
   max-width: 1280px;
@@ -542,11 +568,14 @@
   padding: 0 32px;
 }
 .payments-v2__title {
-  font-size: clamp(48px, 8vw, 132px);
-  line-height: 0.92;
-  letter-spacing: -0.025em;
-  margin: 6px 0 12px;
-  max-width: 16ch;
+  /* Maps to Standard Headings */
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--fg-d);
+  margin-bottom: 24px;
 }
 .payments-v2__hint {
   display: inline-flex;
@@ -697,6 +726,7 @@
   gap: 14px;
 }
 .pay-option {
+  --opt-cut: 12px;
   position: relative;
   padding: 18px 18px 20px;
   border: 1px solid color-mix(in srgb, var(--accent-d) 22%, transparent);
@@ -705,6 +735,14 @@
   flex-direction: column;
   gap: 6px;
   transition: border-color 0.35s ease, background 0.35s ease, transform 0.45s ease;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--opt-cut)) 0,
+    100% var(--opt-cut),
+    100% 100%,
+    var(--opt-cut) 100%,
+    0 calc(100% - var(--opt-cut))
+  );
 }
 .pay-option.is-active {
   border-color: color-mix(in srgb, var(--accent-d) 70%, transparent);
@@ -736,7 +774,6 @@
 }
 
 @media (max-width: 1024px) {
-  .payments-v2__title { font-size: clamp(40px, 9vw, 88px); }
 }
 @media (max-width: 820px) {
   .payments-v2__covers,
@@ -1436,16 +1473,6 @@
   z-index: 1;
 }
 
-.data-card__strip {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px 18px 0;
-  font-family: var(--font-mono-jb);
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--fg-muted-d);
-}
 .data-card__art {
   flex: 1;
   margin: 14px 18px 0;
@@ -1458,12 +1485,16 @@
 }
 .data-card__num {
   display: block;
-  font-family: var(--font-mono-jb);
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: var(--accent-d);
-  margin-bottom: 4px;
-  text-shadow: 0 0 8px var(--accent-glow);
+  font-family: var(--font-display);
+  font-size: clamp(48px, 6vw, 76px);
+  letter-spacing: -0.04em;
+  color: #000000;
+  text-shadow: 
+    0 0 2px var(--accent-d),
+    0 0 10px var(--accent-glow),
+    0 0 20px var(--accent-glow);
+  line-height: 0.9;
+  margin: 0;
 }
 .data-card__title {
   font-family: var(--font-display);
@@ -1575,12 +1606,12 @@
     rgba(124, 92, 255, 0.10) 0%,
     #FFFFFF 100%);
 }
-:root:not(.dark) .data-card__strip {
-  color: #6B6B6B;
-}
+
 :root:not(.dark) .data-card__num {
-  color: #7C5CFF;
-  text-shadow: 0 0 8px rgba(124, 92, 255, 0.35);
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 2px var(--accent-d),
+    0 0 10px var(--accent-glow);
 }
 :root:not(.dark) .data-card__title {
   color: #0A0A0A;
@@ -1898,27 +1929,27 @@
   font-size: clamp(64px, 7vw, 120px);
 }
 .how-bento__title {
+  /* Standardized Card Heading */
   font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
   color: var(--fg-d);
   margin-bottom: 10px;
   text-shadow: var(--phosphor-neutral);
 }
-.how-bento__cell--1 .how-bento__title {
-  font-size: 19px;
-}
+
 .how-bento__body {
+  /* Standardized Card Body */
   font-family: var(--font-mono-jb);
-  font-size: 12px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--fg-muted-d);
   margin-top: auto;
 }
 .how-bento__cell--1 .how-bento__body {
-  font-size: 13px;
+  /* No special override */
   max-width: 38ch;
 }
 
@@ -2892,7 +2923,7 @@
 }
 .trust-v2__inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   flex: 1;
   width: 100%;
   margin: 0 auto;
@@ -2991,7 +3022,7 @@
   margin-top: 24px;
   gap: 0;
   padding: 12px 0 0;
-  transform: translateY(64px);
+  transform: translateY(-45px);
   perspective: 1400px;
 }
 .trust-v2__card {
@@ -3008,10 +3039,10 @@
 
 /* Frame (angular futuristic HUD shell) */
 .trust-v2__card-frame {
-  --cut-tl: 8px;
-  --cut-tr: 34px;
-  --cut-br: 8px;
-  --cut-bl: 34px;
+  --cut-tl: 12px;
+  --cut-tr: 42px;
+  --cut-br: 12px;
+  --cut-bl: 42px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -3054,18 +3085,14 @@
   filter: saturate(1.15);
 }
 
-/* Media image fills the card */
+/* Media area — deep void with CSS HUD architecture */
 .trust-v2__card-media {
   position: relative;
   flex: 1;
   overflow: hidden;
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--accent-d) 10%, #0a0614) 0%,
-      #0a0614 70%),
-    #0a0614;
+  background: #030208;
 }
-/* Subtle scanline + crosshair radial for tech texture */
+/* Subtle scanline overlay */
 .trust-v2__card-media::after {
   content: "";
   position: absolute;
@@ -3075,35 +3102,105 @@
       180deg,
       transparent 0,
       transparent 3px,
-      rgba(139, 108, 255, 0.045) 3px,
-      rgba(139, 108, 255, 0.045) 4px
-    ),
-    radial-gradient(circle at 50% 45%,
-      color-mix(in srgb, var(--accent-d) 18%, transparent) 0%,
-      transparent 55%);
+      rgba(139, 108, 255, 0.04) 3px,
+      rgba(139, 108, 255, 0.04) 4px
+    );
   pointer-events: none;
   mix-blend-mode: screen;
+  z-index: 2;
 }
-.trust-v2__card-img {
+
+/* ── HUD Architecture ── */
+.trust-v2__hud {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  user-select: none;
-  /* Scale/filter controlled via Framer Motion */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Background technical grid */
+.trust-v2__hud-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(139, 108, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 108, 255, 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+/* Targeting crosshair container */
+.trust-v2__hud-target {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Outer ring */
+.trust-v2__hud-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent-d) 50%, transparent);
+  box-shadow: 0 0 18px var(--accent-glow), inset 0 0 12px var(--accent-glow);
+  animation: trust-hud-pulse 3s ease-in-out infinite;
+}
+/* Horizontal crosshair line */
+.trust-v2__hud-line-h {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent-d) 40%, transparent) 30%,
+    color-mix(in srgb, var(--accent-d) 40%, transparent) 70%,
+    transparent 100%
+  );
+}
+/* Vertical crosshair line */
+.trust-v2__hud-line-v {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent-d) 40%, transparent) 30%,
+    color-mix(in srgb, var(--accent-d) 40%, transparent) 70%,
+    transparent 100%
+  );
+}
+/* Central flare dot */
+.trust-v2__hud-flare {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--accent-d);
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 28px var(--accent-glow);
+}
+@keyframes trust-hud-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
 }
 .trust-v2__card-media-overlay {
   position: absolute;
   inset: 0;
   background:
     linear-gradient(180deg,
-      transparent 45%,
-      rgba(6, 4, 12, 0.75) 100%),
-    radial-gradient(ellipse 90% 60% at 50% 30%,
-      transparent 40%,
-      rgba(6, 4, 12, 0.45) 100%);
+      transparent 35%,
+      rgba(3, 2, 8, 0.85) 100%),
+    radial-gradient(ellipse 80% 50% at 50% 40%,
+      rgba(139, 108, 255, 0.06) 0%,
+      transparent 70%);
   pointer-events: none;
+  z-index: 1;
 }
 .trust-v2__card-tag {
   position: absolute;
@@ -3221,8 +3318,8 @@
   .trust-v2 { padding-top: 36px; }
   .trust-v2__inner { gap: 18px; padding-bottom: 20px; }
   .trust-v2__tag { margin-bottom: 10px; }
-  .trust-v2__title { font-size: clamp(28px, 3.2vw, 44px); margin-bottom: 10px; }
-  .trust-v2__copy { font-size: 12px; line-height: 1.6; margin-bottom: 14px; }
+  .trust-v2__title { margin-bottom: 10px; }
+  .trust-v2__copy { line-height: 1.6; margin-bottom: 14px; }
   .trust-v2__cta-label { padding: 11px 18px; }
   .trust-v2__cta-num { padding: 11px 15px; }
   .trust-v2__cards { --card-w: clamp(135px, 12vw, 180px); padding-top: 0; }
@@ -3237,8 +3334,8 @@
 @media (max-height: 720px) {
   .trust-v2 { padding-top: 24px; min-height: calc(100vh - 96px); }
   .trust-v2__inner { gap: 12px; padding-bottom: 14px; }
-  .trust-v2__title { font-size: clamp(24px, 2.8vw, 36px); margin-bottom: 8px; }
-  .trust-v2__copy { font-size: 11px; margin-bottom: 12px; }
+  .trust-v2__title { margin-bottom: 8px; }
+  .trust-v2__copy { margin-bottom: 12px; }
   .trust-v2__cards { --card-w: clamp(115px, 10vw, 150px); }
   .trust-v2__card[data-index="0"],
   .trust-v2__card[data-index="4"] { --base-ty: 40px; }
@@ -3369,8 +3466,8 @@
   animation: status-pulse 2s infinite;
 }
 .hero-frame__headline {
-  font-size: clamp(24px, 5vw, 76px);
-  line-height: 0.88;
+  font-size: clamp(40px, 6vw, 80px);
+  line-height: 0.9;
   letter-spacing: -0.03em;
   text-align: left;
   margin: 0;

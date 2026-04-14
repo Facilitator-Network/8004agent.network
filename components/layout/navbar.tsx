@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/components/theme-provider"
-import { useWallet } from "@/components/wallet-provider"
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -17,14 +16,10 @@ const navLinks = [
   { href: "/docs", label: "Docs" },
 ]
 
-function truncateAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
 
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { walletAddress, isConnecting, connect, disconnect } = useWallet()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -57,7 +52,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav aria-label="Main" className="fixed top-0 left-0 right-0 z-[100] h-16 px-8 grid grid-cols-[1fr_auto_1fr] items-center bg-[color-mix(in_srgb,var(--bg-d)_42%,transparent)] backdrop-blur-2xl backdrop-saturate-150 border-b border-[var(--border-soft-d)]">
+      <nav aria-label="Main" className="fixed top-0 left-0 right-0 z-[100] h-16 px-8 grid grid-cols-[1fr_auto_1fr] items-center bg-[var(--bg-d)]/20 backdrop-blur-md border-b border-[var(--border-soft-d)]">
         {/* Left: Wordmark */}
         <div className="flex items-center gap-4">
           <Link
@@ -117,74 +112,17 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* Right: Wallet + Theme */}
         <div className="flex items-center justify-end gap-3">
-          <div ref={dropdownRef} className="relative" aria-live="polite">
-            <motion.button
-              onClick={walletAddress ? () => setDropdownOpen((v) => !v) : connect}
-              disabled={isConnecting}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              aria-label={
-                isConnecting
-                  ? "Connecting wallet"
-                  : walletAddress
-                    ? `Wallet connected: ${truncateAddress(walletAddress)}. Open account menu.`
-                    : "Connect wallet"
-              }
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border-d)] bg-[var(--surface-d)] text-[11px] font-medium font-mono tracking-[0.12em] uppercase text-[var(--fg-d)] transition-colors duration-75 hover:bg-[var(--fg-d)] hover:text-[var(--bg-d)] disabled:opacity-50"
-            >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  walletAddress
-                    ? "bg-[var(--status-ok)] shadow-[0_0_8px_var(--status-ok)] animate-status-pulse"
-                    : "bg-[var(--status-live)] animate-status-pulse"
-                )}
-              />
-              <span>
-                {isConnecting
-                  ? "Connecting..."
-                  : walletAddress
-                    ? truncateAddress(walletAddress)
-                    : "Connect"}
-              </span>
-            </motion.button>
-
-            <AnimatePresence>
-              {dropdownOpen && walletAddress && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 z-50 min-w-[180px] border border-[var(--border-d)] bg-[var(--bg-d)]"
-                >
-                  <button
-                    onClick={() => {
-                      setDropdownOpen(false)
-                      router.push("/dashboard")
-                    }}
-                    className="w-full px-4 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--fg-muted-d)] hover:text-[var(--fg-d)] hover:bg-[var(--surface-d)] transition-colors"
-                  >
-                    Dashboard
-                  </button>
-                  <div className="h-px bg-[var(--border-soft-d)]" />
-                  <button
-                    onClick={() => {
-                      setDropdownOpen(false)
-                      disconnect()
-                    }}
-                    className="w-full px-4 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--status-live)] hover:bg-[var(--status-live)]/5 transition-colors"
-                  >
-                    Disconnect
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border-d)] bg-[var(--surface-d)] text-[11px] font-medium font-mono tracking-[0.12em] uppercase text-[var(--fg-d)] transition-colors duration-75 hover:bg-[var(--fg-d)] hover:text-[var(--bg-d)]"
+          >
+            <span
+              aria-hidden="true"
+              className="w-1.5 h-1.5 rounded-full bg-[var(--accent-d)] shadow-[0_0_8px_var(--accent-glow)] animate-status-pulse"
+            />
+            <span>Log in</span>
+          </Link>
 
           <ThemeToggle />
         </div>

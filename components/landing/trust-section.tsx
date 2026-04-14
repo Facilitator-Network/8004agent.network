@@ -57,34 +57,28 @@ function getCardStyle(index: number, hoveredIdx: number | null) {
 interface TrustCard {
   tag: string
   title: string
-  image: string
 }
 
 const CARDS: TrustCard[] = [
   {
     tag: "01 · TEE",
     title: "Sealed Execution",
-    image: "/placeholder.svg",
   },
   {
     tag: "02 · PROOF",
     title: "On-Chain Proof",
-    image: "/placeholder.svg",
   },
   {
     tag: "03 · MONITOR",
     title: "Live Monitoring",
-    image: "/placeholder.svg",
   },
   {
     tag: "04 · AUDIT",
     title: "Public Audit",
-    image: "/placeholder.svg",
   },
   {
     tag: "05 · REPUTATION",
     title: "Reputation Index",
-    image: "/placeholder.svg",
   },
 ]
 
@@ -175,17 +169,23 @@ export function TrustSection() {
                     data-hovered={style.isHovered ? "true" : "false"}
                   >
                     <div className="trust-v2__card-media">
-                      <motion.img
-                        src={card.image}
-                        alt=""
-                        className="trust-v2__card-img"
-                        draggable={false}
+                      <motion.div
+                        className="trust-v2__hud"
                         animate={{
-                          scale: style.isHovered ? 1.06 : 1,
-                          filter: style.isHovered ? "saturate(1.1) contrast(1.05)" : "saturate(1) contrast(1.02)"
+                          scale: style.isHovered ? 1.05 : 1,
+                          opacity: style.isHovered ? 1 : 0.85,
+                          filter: style.isHovered ? "saturate(1.2)" : "saturate(1)"
                         }}
                         transition={{ duration: 0.6, ease: ease.out }}
-                      />
+                      >
+                        <div className="trust-v2__hud-grid" />
+                        <div className="trust-v2__hud-target">
+                          <div className="trust-v2__hud-circle" />
+                          <div className="trust-v2__hud-line-h" />
+                          <div className="trust-v2__hud-line-v" />
+                        </div>
+                        <div className="trust-v2__hud-flare" />
+                      </motion.div>
                       <div className="trust-v2__card-media-overlay" aria-hidden />
                       <span className="trust-v2__card-tag">[ {card.tag} ]</span>
                     </div>

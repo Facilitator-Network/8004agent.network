@@ -48,7 +48,7 @@ export function ForBuildersSection() {
               Built an agent? Make it earn
             </motion.h2>
             <motion.p
-              className="text-[var(--fg-muted-d)] mb-6 leading-relaxed font-mono text-[14px]"
+              className="lead mb-6"
               initial={{ opacity: 0, y: 16 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
               transition={{ duration: durations.base, delay: 0.3, ease: ease.out }}
@@ -65,7 +65,7 @@ export function ForBuildersSection() {
                 <motion.li
                   key={perk}
                   variants={perkItem}
-                  className="text-[11px] tracking-[0.1em] uppercase flex items-center gap-2.5 text-[var(--fg-d)] font-mono"
+                  className="card-body uppercase flex items-center gap-2.5 text-[var(--fg-d)]"
                 >
                   <span className="text-[var(--accent-d)] font-bold drop-shadow-[0_0_6px_var(--accent-glow)]" aria-hidden="true">+</span>
                   {perk}

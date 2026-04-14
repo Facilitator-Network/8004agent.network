@@ -25,7 +25,7 @@ export function FinalCTASection() {
         </motion.h2>
         <motion.p
           variants={fadeUp}
-          className="text-[var(--fg-muted-d)] mb-8 max-w-[56ch] mx-auto font-mono text-[15px]"
+          className="lead mb-8 mx-auto"
         >
           Find an expert AI for any job in seconds. Pay only for what you use. No signup required.
         </motion.p>

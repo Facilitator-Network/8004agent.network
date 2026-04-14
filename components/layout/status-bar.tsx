@@ -1,6 +1,6 @@
 export function StatusBar() {
   return (
-    <footer role="contentinfo" aria-label="System status" className="fixed bottom-0 left-0 right-0 z-[100] h-8 px-8 flex items-center gap-8 bg-[color-mix(in_srgb,var(--bg-d)_90%,transparent)] backdrop-blur-xl border-t border-[var(--border-soft-d)] font-mono text-[11px] tracking-[0.1em] uppercase select-none">
+    <footer role="contentinfo" aria-label="System status" className="fixed bottom-0 left-0 right-0 z-[100] h-8 px-8 flex items-center gap-8 bg-[var(--bg-d)]/20 backdrop-blur-md border-t border-[var(--border-soft-d)] font-mono text-[11px] tracking-[0.1em] uppercase select-none">
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-ok)] animate-status-pulse" />
         <span className="text-[var(--fg-muted-d)]">SYS:</span>

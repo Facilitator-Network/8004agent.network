@@ -91,14 +91,9 @@ const INTRO_HOLD = 0.15 // fraction of scroll that keeps intro fully visible
 function CategoryCard({ category }: { category: Category }) {
   return (
     <div className="data-card">
-      <div className="data-card__strip">
-        <span>DATA</span>
-        <span>{category.label}</span>
-      </div>
       <div className={cn("data-card__art", category.scene)} aria-hidden />
       <div className="data-card__title-wrap">
-        <span className="data-card__num">[ {category.num} ]</span>
-        <h3 className="data-card__title">{category.title}</h3>
+        <span className="data-card__num">{category.num}</span>
       </div>
     </div>
   )
