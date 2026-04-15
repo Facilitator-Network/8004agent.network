@@ -2429,7 +2429,7 @@
   z-index: 1;
 }
 :root:not(.dark) .pay-v3-media::after {
-  background: #0a0616;
+  background: #ffffff;
 }
 /* ---- Text frame (plain div — TL + BL chamfer, TR + BR straight) ---- */
 .pay-v3-text-frame {
@@ -2591,29 +2591,32 @@
   margin-bottom: 12px;
   min-width: 0;
 }
-.pay-v3-num {
-  flex-shrink: 0;
-  font-family: var(--font-mono-jb);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-d);
-  text-shadow: 0 0 8px var(--accent-glow);
-}
+.pay-v3-num,
 .pay-v3-title {
-  flex: 1 1 auto;
-  min-width: 0;
   font-family: var(--font-display);
   font-size: clamp(13px, 1.1vw, 17px);
   line-height: 1.1;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--fg-d);
-  text-shadow: var(--phosphor-neutral);
+  text-shadow: none;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
+  margin: 0;
+}
+.pay-v3-num {
+  flex-shrink: 0;
+}
+.pay-v3-title {
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin: 0;
+}
+.pay-v3-cell:hover .pay-v3-num,
+.pay-v3-cell:hover .pay-v3-title {
+  color: var(--accent-d);
+  text-shadow: 0 0 8px var(--accent-glow);
 }
 .pay-v3-body {
   font-family: var(--font-mono-jb);
