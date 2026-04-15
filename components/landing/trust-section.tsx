@@ -51,7 +51,7 @@ function getCardStyle(index: number, hoveredIdx: number | null) {
     if (index === 3) { newTx = -22; newRx = 2; newTy = 40; }
   }
 
-  return { rotate: newRx, x: newTx, y: newTy, zIndex, brightness: 0.68, saturate: 0.85, lift: 0, isHovered: false }
+  return { rotate: newRx, x: newTx, y: newTy, zIndex, brightness: 1.18, saturate: 0.4, lift: 0, isHovered: false }
 }
 
 interface TrustCard {
@@ -161,7 +161,7 @@ export function TrustSection() {
                     rotate: style.rotate,
                     filter: style.isHovered
                       ? `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 30px 48px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 26px rgba(139, 108, 255, 0.55))`
-                      : `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 20px 32px rgba(0, 0, 0, 0.55))`,
+                      : `brightness(${style.brightness}) saturate(${style.saturate}) blur(0.4px) drop-shadow(0 14px 24px rgba(124, 92, 255, 0.22))`,
                   }}
                   transition={{
                     default: { duration: 0.55, ease: ease.out },

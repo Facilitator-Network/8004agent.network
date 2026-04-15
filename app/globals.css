@@ -1641,12 +1641,12 @@
 }
 :root:not(.dark) .data-card--trust .data-card__num,
 :root:not(.dark) .data-card--trust .data-card__label {
-  color: #0A0612;
-  -webkit-text-fill-color: #0A0612;
-  -webkit-text-stroke: 0.3px color-mix(in srgb, var(--accent-d) 45%, transparent);
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-stroke: 0.5px color-mix(in srgb, var(--accent-d) 45%, transparent);
   text-shadow:
     0 0 3px rgba(124, 92, 255, 0.22),
-    0 0 8px rgba(124, 92, 255, 0.14);
+    0 0 8px rgba(124, 92, 255, 0.12);
 }
 
 /* Hover — light bulb turns on, hologram gradient */
