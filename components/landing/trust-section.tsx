@@ -7,9 +7,9 @@ import { Eyebrow } from "@/components/ui/eyebrow"
 import { ease, fadeUp, fadeDown, staggerContainer } from "@/lib/motion"
 
 function getCardStyle(index: number, hoveredIdx: number | null) {
-  const baseRx = [-16, -8, 0, 8, 16][index]
-  const baseTx = [18, 8, 0, -8, -18][index]
-  const baseTy = [70, 26, -6, 26, 70][index]
+  const baseRx = [-10, -5, 0, 5, 10][index]
+  const baseTx = [12, 6, 0, -6, -12][index]
+  const baseTy = [74, 50, 32, 50, 74][index]
   const zIndex = [1, 2, 3, 2, 1][index]
 
   if (hoveredIdx === null) {
@@ -130,6 +130,7 @@ export function TrustSection() {
         >
           {CARDS.map((card, i) => {
             const style = getCardStyle(i, hoveredIdx)
+            const num = card.tag.split(/\s+/)[0]
             return (
               <motion.div
                 key={card.tag}
@@ -162,35 +163,16 @@ export function TrustSection() {
                       ? `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 30px 48px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 26px rgba(139, 108, 255, 0.55))`
                       : `brightness(${style.brightness}) saturate(${style.saturate}) drop-shadow(0 20px 32px rgba(0, 0, 0, 0.55))`,
                   }}
-                  transition={{ duration: 0.55, ease: ease.out }}
+                  transition={{
+                    default: { duration: 0.55, ease: ease.out },
+                    filter: { duration: 0 },
+                  }}
                 >
-                  <div
-                    className="trust-v2__card-frame"
-                    data-hovered={style.isHovered ? "true" : "false"}
-                  >
-                    <div className="trust-v2__card-media">
-                      <motion.div
-                        className="trust-v2__hud"
-                        animate={{
-                          scale: style.isHovered ? 1.05 : 1,
-                          opacity: style.isHovered ? 1 : 0.85,
-                          filter: style.isHovered ? "saturate(1.2)" : "saturate(1)"
-                        }}
-                        transition={{ duration: 0.6, ease: ease.out }}
-                      >
-                        <div className="trust-v2__hud-grid" />
-                        <div className="trust-v2__hud-target">
-                          <div className="trust-v2__hud-circle" />
-                          <div className="trust-v2__hud-line-h" />
-                          <div className="trust-v2__hud-line-v" />
-                        </div>
-                        <div className="trust-v2__hud-flare" />
-                      </motion.div>
-                      <div className="trust-v2__card-media-overlay" aria-hidden />
-                      <span className="trust-v2__card-tag">[ {card.tag} ]</span>
-                    </div>
-                    <div className="trust-v2__card-label">
-                      <h3>{card.title}</h3>
+                  <div className="data-card data-card--trust" data-hovered={style.isHovered ? "true" : "false"}>
+                    <div className="data-card__art" aria-hidden />
+                    <div className="data-card__title-wrap">
+                      <span className="data-card__num">{num}</span>
+                      <span className="data-card__label">{card.title}</span>
                     </div>
                   </div>
                 </motion.div>

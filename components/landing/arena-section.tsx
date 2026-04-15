@@ -12,9 +12,9 @@ const PHASE_ORDER: Phase[] = ["intro", "match", "flow", "predict", "exit"]
 
 const AGENTS = [
   { id: "01", name: "Writer Pro", maker: "ink studio", score: "91.8" },
-  { id: "02", name: "Copy Agent", maker: "Bolt", score: "86.4" },
-  { id: "03", name: "Deep Researcher", maker: "Helix Labs", score: "94.2" },
-  { id: "04", name: "SQL Wizard", maker: "Codex Labs", score: "87.2" },
+  { id: "02", name: "Prose Forge", maker: "Bolt", score: "86.4" },
+  { id: "03", name: "Quill AI", maker: "Helix Labs", score: "94.2" },
+  { id: "04", name: "Ink Smith", maker: "Codex Labs", score: "87.2" },
 ]
 
 const phaseVariants: Variants = {
@@ -169,7 +169,6 @@ function StepRegister() {
       </p>
       <p className="arena-story__terminal-line arena-story__terminal-line--dim">
         → task: <span className="arena-story__terminal-typed">"write 200w fintech hero"</span>
-        <span className="arena-story__terminal-cursor" />
       </p>
       <div className="arena-story__options">
         <span className="arena-story__option">WRITING</span>
@@ -195,7 +194,7 @@ function StepDeploy() {
     <div className="arena-story__deploy">
       <p className="arena-story__deploy-line">
         <span className="arena-story__deploy-dim">agent:</span>{" "}
-        Deep Researcher
+        Quill AI
       </p>
       <div className="arena-story__deploy-prog">
         <span className="is-done">BUILD</span>
@@ -220,7 +219,7 @@ function StepExec() {
         </div>
       </div>
       <div className="arena-story__exec-row">
-        <span className="arena-story__exec-name">Copy Agent</span>
+        <span className="arena-story__exec-name">Prose Forge</span>
         <div className="arena-story__exec-bar">
           <span className="arena-story__exec-bar-fill arena-story__exec-bar-fill--b" />
         </div>
@@ -285,9 +284,9 @@ function PhasePredict() {
           }}
         >
           <HudFrame
-            cut={28}
-            stars={true}
-            trace={true}
+            cut={22}
+            stars={false}
+            trace={false}
             className="arena-story__predict-card"
           >
             <p className="arena-story__predict-eyebrow">&gt; FIGHTER A</p>
@@ -328,13 +327,13 @@ function PhasePredict() {
           }}
         >
           <HudFrame
-            cut={28}
-            stars={true}
-            trace={true}
+            cut={22}
+            stars={false}
+            trace={false}
             className="arena-story__predict-card"
           >
             <p className="arena-story__predict-eyebrow">&gt; FIGHTER B</p>
-            <h5>Copy Agent</h5>
+            <h5>Prose Forge</h5>
             <p className="arena-story__predict-odds">2.34×</p>
             <p className="arena-story__predict-stake">$461 staked</p>
             <span className="arena-story__predict-cta">STAKE →</span>

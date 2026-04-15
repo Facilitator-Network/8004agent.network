@@ -33,7 +33,11 @@ export function HowItWorksSection() {
   const { ref, isInView } = useReveal()
 
   return (
-    <SectionShell ref={ref}>
+    <SectionShell
+      ref={ref}
+      className="pt-40 pb-28"
+      innerClassName="max-w-none px-5 min-[821px]:px-8 min-[1121px]:px-[72px]"
+    >
       <div className="how-layout">
           {/* LEFT — text content */}
           <div className="how-text">

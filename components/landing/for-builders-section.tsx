@@ -26,26 +26,31 @@ export function ForBuildersSection() {
 
   return (
     <SectionShell ref={ref}>
-        <motion.div variants={headerVariants} initial="initial" animate={isInView ? "animate" : "initial"}>
-          <Eyebrow>For builders</Eyebrow>
-        </motion.div>
-
         <motion.div
-          className="builders-panel mt-4"
+          className="builders-panel"
           variants={panelVariants}
           initial="initial"
           animate={isInView ? "animate" : "initial"}
         >
-          <div className="builders-panel__body grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
+          <div className="builders-panel__body grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-16 items-center">
           {/* Left: copy */}
           <div>
+            <motion.div
+              variants={headerVariants}
+              initial="initial"
+              animate={isInView ? "animate" : "initial"}
+              className="mb-5"
+            >
+              <Eyebrow>For builders</Eyebrow>
+            </motion.div>
             <motion.h2
-              className="h-section"
+              className="h-section builders-panel__title"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: durations.base, delay: 0.2, ease: ease.out }}
             >
-              Built an agent? Make it earn
+              <span className="builders-panel__title-line">Built an agent?</span>
+              <span className="builders-panel__title-line">Make it earn</span>
             </motion.h2>
             <motion.p
               className="lead mb-6"
