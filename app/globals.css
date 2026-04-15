@@ -1641,13 +1641,12 @@
 }
 :root:not(.dark) .data-card--trust .data-card__num,
 :root:not(.dark) .data-card--trust .data-card__label {
-  color: #ffffff;
-  -webkit-text-fill-color: #ffffff;
-  -webkit-text-stroke: 0.4px color-mix(in srgb, var(--accent-l) 50%, transparent);
+  color: #0A0612;
+  -webkit-text-fill-color: #0A0612;
+  -webkit-text-stroke: 0.3px color-mix(in srgb, var(--accent-d) 45%, transparent);
   text-shadow:
-    0 0 3px rgba(124, 92, 255, 0.28),
-    0 0 8px rgba(124, 92, 255, 0.18),
-    0 0 16px rgba(124, 92, 255, 0.10);
+    0 0 3px rgba(124, 92, 255, 0.22),
+    0 0 8px rgba(124, 92, 255, 0.14);
 }
 
 /* Hover — light bulb turns on, hologram gradient */
@@ -1674,17 +1673,18 @@
 :root:not(.dark) .data-card--trust[data-hovered="true"] .data-card__label {
   background: linear-gradient(
     180deg,
-    #5c3cff 0%,
-    var(--accent-l) 55%,
+    #3a1fcf 0%,
+    #5c3cff 50%,
     #7c5cff 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0;
   filter:
-    drop-shadow(0 0 4px rgba(124, 92, 255, 0.45))
-    drop-shadow(0 0 10px rgba(124, 92, 255, 0.28));
+    drop-shadow(0 0 4px rgba(92, 60, 255, 0.55))
+    drop-shadow(0 0 10px rgba(92, 60, 255, 0.32));
 }
 @keyframes data-card-holo {
   0%, 100% { opacity: 1; }
@@ -4269,6 +4269,16 @@
 }
 :root:not(.dark) .trust-v2__ticker {
   background: color-mix(in srgb, var(--accent-d) 5%, #FAF8FF);
+  border-top-color: color-mix(in srgb, var(--accent-d) 28%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--accent-d) 28%, transparent);
+}
+:root:not(.dark) .trust-v2__ticker-item {
+  color: #1a1425;
+}
+:root:not(.dark) .trust-v2__ticker-dot {
+  box-shadow:
+    0 0 6px rgba(124, 92, 255, 0.45),
+    0 0 12px rgba(124, 92, 255, 0.25);
 }
 
 /* =========================================================
